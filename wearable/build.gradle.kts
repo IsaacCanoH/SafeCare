@@ -5,11 +5,7 @@ plugins {
 
 android {
     namespace = "mx.utng.ich.safecare.wearable"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "mx.utng.ich.safecare.wearable"
@@ -40,6 +36,8 @@ android {
 }
 
 dependencies {
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.foundation)

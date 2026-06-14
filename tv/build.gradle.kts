@@ -5,11 +5,7 @@ plugins {
 
 android {
     namespace = "mx.utng.ich.safecaretv"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "mx.utng.ich.safecaretv"
