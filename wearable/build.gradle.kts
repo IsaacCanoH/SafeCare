@@ -36,6 +36,8 @@ android {
 }
 
 dependencies {
+    implementation(project(":designsystem"))
+
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
     implementation(platform(libs.androidx.compose.bom))

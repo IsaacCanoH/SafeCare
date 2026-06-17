@@ -4,6 +4,9 @@
     <!-- Permiso que ya tenía el proyecto para mantener activo el dispositivo cuando sea necesario -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- Permiso para consultar estado de conexión -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <!-- Permisos de ubicación -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -38,10 +41,6 @@
             android:name="wear-sdk"
             android:required="false" />
 
-        <!--
-            Set to true if your app is Standalone, that is, it does not require the handheld
-            app to run.
-        -->
         <meta-data
             android:name="com.google.android.wearable.standalone"
             android:value="true" />
