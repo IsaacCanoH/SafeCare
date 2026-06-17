@@ -26,3 +26,4 @@ rootProject.name = "SafeCare"
 include(":app")
 include(":wearable")
 include(":tv")
+include(":designsystem")
