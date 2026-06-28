@@ -42,4 +42,18 @@ class WearLocationReader(
             onLocationTextChange("Error: ${exception.message}")
         }
     }
+
+    @SuppressLint("MissingPermission")
+    suspend fun getCurrentLocationData(): android.location.Location? {
+        val cancellationTokenSource = CancellationTokenSource()
+        return try {
+            val task = fusedLocationClient.getCurrentLocation(
+                Priority.PRIORITY_HIGH_ACCURACY,
+                cancellationTokenSource.token
+            )
+            com.google.android.gms.tasks.Tasks.await(task)
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

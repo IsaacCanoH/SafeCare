@@ -9,10 +9,14 @@ class LocationPermissionManager(
 ) {
 
     fun getLocationPermissions(): Array<String> {
-        return arrayOf(
+        val permissions = mutableListOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION
         )
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        }
+        return permissions.toTypedArray()
     }
 
     fun hasLocationPermission(): Boolean {
