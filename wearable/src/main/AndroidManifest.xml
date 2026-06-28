@@ -4,6 +4,17 @@
     <!-- Permiso que ya tenía el proyecto para mantener activo el dispositivo cuando sea necesario -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- Permiso para acceso a internet (Necesario para Supabase) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Permisos de Ubicación para Geofencing -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- Permiso para vibración (Notificación de alerta) -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <!-- Permiso para consultar estado de conexión -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
@@ -45,6 +56,11 @@
             android:name="com.google.android.wearable.standalone"
             android:value="true" />
 
+        <receiver
+            android:name=".presentation.geofence.GeofenceBroadcastReceiver"
+            android:enabled="true"
+            android:exported="true" />
+
         <activity
             android:name=".presentation.MainActivity"
             android:exported="true"
@@ -58,6 +74,13 @@
             </intent-filter>
 
         </activity>
+
+        <activity
+            android:name=".presentation.AlertActivity"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@android:style/Theme.DeviceDefault" />
 
     </application>
 
