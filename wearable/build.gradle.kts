@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -39,6 +39,10 @@ android {
 dependencies {
     implementation(project(":designsystem"))
 
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
     implementation(platform(libs.androidx.compose.bom))
@@ -55,14 +59,6 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.ui.tooling)
     implementation(libs.play.services.wearable)
-
-    // Supabase
-    implementation(libs.supabase.postgrest)
-    implementation(libs.supabase.auth)
-    implementation(libs.supabase.realtime)
-    implementation(libs.ktor.client.android)
-    implementation(libs.ktor.client.core)
-    implementation(libs.kotlinx.serialization.json)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

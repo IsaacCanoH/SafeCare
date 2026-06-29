@@ -3,31 +3,47 @@ package mx.utng.ich.safecare.wearable.presentation.location
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 
 class LocationPermissionManager(
     private val context: Context
 ) {
 
     fun getLocationPermissions(): Array<String> {
-        val permissions = mutableListOf(
+        return getForegroundLocationPermissions()
+    }
+
+    fun getForegroundLocationPermissions(): Array<String> {
+        return arrayOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION
         )
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+    }
+
+    fun getBackgroundLocationPermission(): String? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+        } else {
+            null
         }
-        return permissions.toTypedArray()
     }
 
     fun hasLocationPermission(): Boolean {
-        val fineLocationPermission =
-            context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+        return hasPermission(Manifest.permission.ACCESS_FINE_LOCATION) ||
+                hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+    }
 
-        val coarseLocationPermission =
-            context.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+    fun hasPreciseLocationPermission(): Boolean {
+        return hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+    }
 
-        return fineLocationPermission == PackageManager.PERMISSION_GRANTED ||
-                coarseLocationPermission == PackageManager.PERMISSION_GRANTED
+    fun hasBackgroundLocationPermission(): Boolean {
+        val permission = getBackgroundLocationPermission() ?: return true
+        return hasPermission(permission)
+    }
+
+    fun hasGeofencePermissions(): Boolean {
+        return hasPreciseLocationPermission() && hasBackgroundLocationPermission()
     }
 
     fun isLocationPermissionGranted(
@@ -42,11 +58,23 @@ class LocationPermissionManager(
         return fineLocationGranted || coarseLocationGranted
     }
 
+    fun isPreciseLocationPermissionGranted(
+        permissions: Map<String, Boolean>
+    ): Boolean {
+        return permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                hasPreciseLocationPermission()
+    }
+
     fun getLocationPermissionStatusText(): String {
-        return if (hasLocationPermission()) {
-            "Permiso de ubicación concedido"
-        } else {
-            "Permiso de ubicación pendiente"
+        return when {
+            !hasLocationPermission() -> "Permiso de ubicacion pendiente"
+            !hasPreciseLocationPermission() -> "Permiso de ubicacion precisa pendiente"
+            !hasBackgroundLocationPermission() -> "Permiso de ubicacion en segundo plano pendiente"
+            else -> "Permisos de ubicacion concedidos"
         }
+    }
+
+    private fun hasPermission(permission: String): Boolean {
+        return context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
     }
 }

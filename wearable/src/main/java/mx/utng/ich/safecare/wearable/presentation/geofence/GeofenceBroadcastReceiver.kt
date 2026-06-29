@@ -3,106 +3,141 @@ package mx.utng.ich.safecare.wearable.presentation.geofence
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.location.Location
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
 import com.google.android.gms.location.Geofence
+import com.google.android.gms.location.GeofenceStatusCodes
 import com.google.android.gms.location.GeofencingEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import mx.utng.ich.safecare.wearable.data.model.Alerta
-import mx.utng.ich.safecare.wearable.data.model.TipoAlerta
-import mx.utng.ich.safecare.wearable.data.model.Ubicacion
-import mx.utng.ich.safecare.wearable.data.repository.SupabaseRepository
+import mx.utng.ich.safecare.wearable.data.local.SafeCareProfileResolver
+import mx.utng.ich.safecare.wearable.data.local.database.DatabaseProvider
+import mx.utng.ich.safecare.wearable.data.local.entity.AlertaEntity
+import mx.utng.ich.safecare.wearable.data.local.entity.SmartwatchEntity
+import mx.utng.ich.safecare.wearable.data.local.entity.UbicacionEntity
 import mx.utng.ich.safecare.wearable.presentation.AlertActivity
 import mx.utng.ich.safecare.wearable.presentation.location.WearLocationReader
 import mx.utng.ich.safecare.wearable.presentation.sensors.DeviceStatusReader
 
 class GeofenceBroadcastReceiver : BroadcastReceiver() {
 
-    private val repository = SupabaseRepository()
-    private val scope = CoroutineScope(Dispatchers.IO)
-
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d("GeofenceReceiver", "Evento de geocerca RECIBIDO")
+        val appContext = context.applicationContext
+        Log.d(TAG, "Evento de geocerca recibido")
+
         val geofencingEvent = GeofencingEvent.fromIntent(intent) ?: run {
-            Log.e("GeofenceReceiver", "El Intent no contenía un GeofencingEvent")
+            Log.e(TAG, "El Intent no contenia un GeofencingEvent")
             return
         }
 
         if (geofencingEvent.hasError()) {
-            Log.e("GeofenceReceiver", "Error en evento: ${geofencingEvent.errorCode}")
+            val errorMessage = GeofenceStatusCodes.getStatusCodeString(geofencingEvent.errorCode)
+            Log.e(TAG, "Error en evento de geocerca: $errorMessage")
+            SafeCareAlertNotifier.showGeofenceErrorNotification(appContext, errorMessage)
             return
         }
 
         val geofenceTransition = geofencingEvent.geofenceTransition
-        Log.i("GeofenceReceiver", "Transición detectada: $geofenceTransition (EXIT=${Geofence.GEOFENCE_TRANSITION_EXIT}, ENTER=${Geofence.GEOFENCE_TRANSITION_ENTER})")
+        Log.i(
+            TAG,
+            "Transicion detectada: $geofenceTransition " +
+                    "(EXIT=${Geofence.GEOFENCE_TRANSITION_EXIT}, " +
+                    "ENTER=${Geofence.GEOFENCE_TRANSITION_ENTER})"
+        )
 
-        if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
-            Log.w("GeofenceReceiver", "¡USUARIO SALIÓ DE ZONA SEGURA!")
-            
-            triggerVibration(context)
-            
-            val deviceStatusReader = DeviceStatusReader(context)
-            val wearLocationReader = WearLocationReader(context)
-
-            // Registrar alerta completa en Supabase
-            scope.launch {
-                val serialIdentificador = Build.MODEL
-                val idPerfil = "b84236e7-578d-4a1e-8761-0b5c1792f582" 
-                
-                // 1. Actualizar estado del Smartwatch
-                val swUpdated = repository.updateSmartWatchStatus(
-                    numeroSerie = serialIdentificador,
-                    bateria = deviceStatusReader.getBatteryLevel(),
-                    conexion = if (deviceStatusReader.isOnline()) "online" else "offline"
-                )
-                val uuidSmartwatch = swUpdated?.id ?: ""
-
-                // 2. Insertar Ubicación
-                val locationData = wearLocationReader.getCurrentLocationData()
-                var idUbicacion: String? = null
-                if (locationData != null && uuidSmartwatch.isNotEmpty()) {
-                    val nuevaUbicacion = repository.insertUbicacion(
-                        Ubicacion(
-                            latitud = locationData.latitude,
-                            longitud = locationData.longitude,
-                            idSmartwatch = uuidSmartwatch
-                        )
-                    )
-                    idUbicacion = nuevaUbicacion?.id
-                }
-
-                // 3. Insertar Alerta de Zona Segura
-                val alerta = Alerta(
-                    tipoAlerta = TipoAlerta.ZONA_SEGURA,
-                    descripcion = "El usuario ha salido del perímetro de seguridad",
-                    idPerfil = idPerfil,
-                    idUbicacion = idUbicacion
-                )
-                repository.insertAlerta(alerta)
-                Log.i("GeofenceReceiver", "Alerta de salida registrada en DB")
-            }
-
-            // Abrir la pantalla de alerta
-            val alertIntent = Intent(context, AlertActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                putExtra("EXTRA_MESSAGE", "Saliste de zona segura")
-                putExtra("EXTRA_ADDRESS", "Zona: Casa Abuelo") // Puedes dinámicamente obtener esto del geofencingEvent.triggeringGeofences
-            }
-            context.startActivity(alertIntent)
+        if (geofenceTransition != Geofence.GEOFENCE_TRANSITION_EXIT) {
+            return
         }
+
+        val geofenceId = geofencingEvent.triggeringGeofences?.firstOrNull()?.requestId
+        val zoneLabel = geofenceId?.let { "Zona $it" }
+        val triggeringLocation = geofencingEvent.triggeringLocation
+
+        Log.w(TAG, "Usuario salio de zona segura: ${zoneLabel ?: "zona desconocida"}")
+
+        // Lanzar la Activity de alerta a pantalla completa directamente
+        launchAlertActivity(appContext, zoneLabel)
+
+        SafeCareAlertNotifier.showSafeZoneExitNotification(appContext, zoneLabel)
+        triggerVibration(appContext)
+
+        val pendingResult = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                saveSafeZoneExitAlert(appContext, triggeringLocation)
+                Log.i(TAG, "Datos de salida de zona guardados localmente en Room")
+            } catch (exception: Exception) {
+                Log.e(TAG, "No se pudo guardar la alerta de geocerca", exception)
+            } finally {
+                pendingResult.finish()
+            }
+        }
+    }
+
+    private suspend fun saveSafeZoneExitAlert(
+        context: Context,
+        triggeringLocation: Location?
+    ) {
+        val deviceStatusReader = DeviceStatusReader(context)
+        val wearLocationReader = WearLocationReader(context)
+        val serialIdentificador = Build.MODEL
+
+        val database = DatabaseProvider.getDatabase(context)
+        val alertaDao = database.alertaDao()
+        val ubicacionDao = database.ubicacionDao()
+        val smartwatchDao = database.smartwatchDao()
+        val idPerfil = SafeCareProfileResolver.resolveProfileId(database)
+
+        val batteryLevel = deviceStatusReader.getBatteryLevel()
+        val isOnline = deviceStatusReader.isOnline()
+        val smartwatchLocal = SmartwatchEntity(
+            numeroSerie = serialIdentificador,
+            bateria = batteryLevel,
+            conexion = if (isOnline) "online" else "offline",
+            idPerfil = idPerfil,
+            sincronizado = false
+        )
+        smartwatchDao.insertarOActualizar(smartwatchLocal)
+
+        val locationData = triggeringLocation ?: wearLocationReader.getCurrentLocationData()
+        var localUbicacionId: Long? = null
+
+        if (locationData != null) {
+            val nuevaUbicacion = UbicacionEntity(
+                latitud = locationData.latitude,
+                longitud = locationData.longitude,
+                idSmartwatch = serialIdentificador,
+                sincronizada = false
+            )
+            localUbicacionId = ubicacionDao.insertar(nuevaUbicacion)
+        }
+
+        val alertaLocal = AlertaEntity(
+            tipoAlerta = "ZONA_SEGURA",
+            descripcion = "El usuario ha salido del perimetro de seguridad",
+            idPerfil = idPerfil,
+            idUbicacion = localUbicacionId?.toString(),
+            sincronizada = false
+        )
+        alertaDao.insertar(alertaLocal)
     }
 
     private fun triggerVibration(context: Context) {
         val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            val vibratorManager =
+                context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
             vibratorManager.defaultVibrator
         } else {
             context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+
+        if (!vibrator.hasVibrator()) {
+            return
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -112,5 +147,18 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         } else {
             vibrator.vibrate(1000)
         }
+    }
+
+    private fun launchAlertActivity(context: Context, zoneLabel: String?) {
+        val intent = Intent(context, AlertActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("EXTRA_MESSAGE", "Saliste de zona segura")
+            putExtra("EXTRA_ADDRESS", zoneLabel ?: "Zona segura")
+        }
+        context.startActivity(intent)
+    }
+
+    companion object {
+        private const val TAG = "GeofenceReceiver"
     }
 }

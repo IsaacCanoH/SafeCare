@@ -5,10 +5,9 @@ import android.os.Build
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import mx.utng.ich.safecare.wearable.data.model.SmartWatch
-import mx.utng.ich.safecare.wearable.data.model.TipoConexion
-import mx.utng.ich.safecare.wearable.data.model.Ubicacion
-import mx.utng.ich.safecare.wearable.data.repository.SupabaseRepository
+import mx.utng.ich.safecare.wearable.data.local.database.DatabaseProvider
+import mx.utng.ich.safecare.wearable.data.local.entity.SmartwatchEntity
+import mx.utng.ich.safecare.wearable.data.local.entity.UbicacionEntity
 import mx.utng.ich.safecare.wearable.presentation.location.WearLocationReader
 import mx.utng.ich.safecare.wearable.presentation.sensors.DeviceStatusReader
 
@@ -17,7 +16,6 @@ class StatusWorker(
     workerParams: WorkerParameters
 ) : CoroutineWorker(context, workerParams) {
 
-    private val repository = SupabaseRepository()
     private val deviceStatusReader = DeviceStatusReader(context)
     private val wearLocationReader = WearLocationReader(context)
 
@@ -26,33 +24,34 @@ class StatusWorker(
 
         val battery = deviceStatusReader.getBatteryLevel()
         val isOnline = deviceStatusReader.isOnline()
-        val connectionType = if (isOnline) TipoConexion.ONLINE else TipoConexion.OFFLINE
-        
-        // Usamos Build.MODEL como identificador principal
         val serialNumber = Build.MODEL
 
-        // 1. Actualizar estado del SmartWatch y obtener su UUID real
-        val swUpdated = repository.updateSmartWatchStatus(
+        val database = DatabaseProvider.getDatabase(applicationContext)
+        val smartwatchDao = database.smartwatchDao()
+        val ubicacionDao = database.ubicacionDao()
+
+        // 1. Guardar estado del Smartwatch localmente
+        val smartwatchLocal = SmartwatchEntity(
             numeroSerie = serialNumber,
             bateria = battery,
-            conexion = if (isOnline) "online" else "offline"
+            conexion = if (isOnline) "online" else "offline",
+            sincronizado = false
         )
-        val uuidSmartwatch = swUpdated?.id
+        smartwatchDao.insertarOActualizar(smartwatchLocal)
 
-        // 2. Registrar ubicación usando el UUID obtenido
+        // 2. Guardar Ubicación localmente
         val location = wearLocationReader.getCurrentLocationData()
-        Log.d("StatusWorker", "Datos obtenidos - UUID: $uuidSmartwatch, Location: $location")
-        
-        if (location != null && uuidSmartwatch != null) {
-            repository.insertUbicacion(
-                Ubicacion(
-                    latitud = location.latitude,
-                    longitud = location.longitude,
-                    idSmartwatch = uuidSmartwatch
-                )
+        if (location != null) {
+            val nuevaUbicacion = UbicacionEntity(
+                latitud = location.latitude,
+                longitud = location.longitude,
+                idSmartwatch = serialNumber,
+                sincronizada = false
             )
-            Log.i("StatusWorker", "Monitoreo periódico guardado con éxito.")
+            ubicacionDao.insertar(nuevaUbicacion)
         }
+
+        Log.i("StatusWorker", "Datos guardados localmente en Room")
 
         return Result.success()
     }

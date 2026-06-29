@@ -1,38 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permiso que ya tenía el proyecto para mantener activo el dispositivo cuando sea necesario -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-
-    <!-- Permiso para acceso a internet (Necesario para Supabase) -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Permisos de Ubicación para Geofencing -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
-    <!-- Permiso para vibración (Notificación de alerta) -->
     <uses-permission android:name="android.permission.VIBRATE" />
-
-    <!-- Permiso para consultar estado de conexión -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
-    <!-- Permisos de ubicación -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
-    <!-- Permisos necesarios más adelante para monitoreo en primer plano -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-
-    <!-- Permiso para notificaciones en Android 13 o superior -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
-    <!-- Indica que este módulo es para reloj -->
     <uses-feature android:name="android.hardware.type.watch" />
 
-    <!-- GPS opcional, porque no todos los relojes tienen GPS integrado -->
     <uses-feature
         android:name="android.hardware.location.gps"
         android:required="false" />
@@ -59,7 +43,14 @@
         <receiver
             android:name=".presentation.geofence.GeofenceBroadcastReceiver"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="false" />
+
+        <service
+            android:name=".presentation.location.LocationTrackingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location"
+            android:stopWithTask="false" />
 
         <activity
             android:name=".presentation.MainActivity"
