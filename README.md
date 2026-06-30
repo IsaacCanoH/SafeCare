@@ -2,8 +2,8 @@
 
 ## Nombre del estudiante
 
-Isaac Cano Hernández
-Luis Manuel Ramírez Ramírez
+- Isaac Cano Hernández
+- Luis Manuel Ramírez Ramírez
 
 ## Grupo
 
