@@ -12,20 +12,14 @@ interface UbicacionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertar(ubicacion: UbicacionEntity): Long
 
-    @Query("SELECT * FROM ubicaciones ORDER BY fechaHora DESC")
+    @Query("SELECT * FROM Ubicacion ORDER BY fechaHora DESC")
     suspend fun obtenerTodas(): List<UbicacionEntity>
-
-    @Query("SELECT * FROM ubicaciones WHERE sincronizada = 0 ORDER BY fechaHora ASC")
-    suspend fun obtenerPendientesDeSincronizar(): List<UbicacionEntity>
-
-    @Query("UPDATE ubicaciones SET sincronizada = 1 WHERE id = :idUbicacion")
-    suspend fun marcarComoSincronizada(idUbicacion: Long)
 
     @Query(
         """
-        DELETE FROM ubicaciones
-        WHERE id NOT IN (
-            SELECT id FROM ubicaciones
+        DELETE FROM Ubicacion
+        WHERE idUbicacion NOT IN (
+            SELECT idUbicacion FROM Ubicacion
             ORDER BY fechaHora DESC
             LIMIT :maxRecords
         )
@@ -33,6 +27,6 @@ interface UbicacionDao {
     )
     suspend fun conservarSoloRegistrosRecientes(maxRecords: Int)
 
-    @Query("DELETE FROM ubicaciones")
+    @Query("DELETE FROM Ubicacion")
     suspend fun eliminarTodas()
 }

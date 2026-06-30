@@ -35,7 +35,7 @@ class StatusWorker(
             numeroSerie = serialNumber,
             bateria = battery,
             conexion = if (isOnline) "online" else "offline",
-            sincronizado = false
+            estado = if (isOnline) "ACTIVO" else "INACTIVO"
         )
         smartwatchDao.insertarOActualizar(smartwatchLocal)
 
@@ -45,8 +45,7 @@ class StatusWorker(
             val nuevaUbicacion = UbicacionEntity(
                 latitud = location.latitude,
                 longitud = location.longitude,
-                idSmartwatch = serialNumber,
-                sincronizada = false
+                idSmartwatch = serialNumber
             )
             ubicacionDao.insertar(nuevaUbicacion)
         }

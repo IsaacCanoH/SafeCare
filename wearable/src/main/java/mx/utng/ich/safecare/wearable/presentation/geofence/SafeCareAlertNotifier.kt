@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.location.Location
 import android.os.Build
 import android.util.Log
 import mx.utng.ich.safecare.wearable.R
@@ -18,7 +19,8 @@ object SafeCareAlertNotifier {
 
     fun showSafeZoneExitNotification(
         context: Context,
-        zoneLabel: String? = null
+        zoneLabel: String? = null,
+        location: Location? = null
     ): Boolean {
         val detail = if (zoneLabel.isNullOrBlank()) {
             "Se detecto que saliste del perimetro de seguridad."
@@ -34,6 +36,7 @@ object SafeCareAlertNotifier {
             text = detail,
             alertMessage = "Saliste de zona segura",
             alertAddress = zoneLabel ?: "Zona segura",
+            alertLocation = location,
             fullScreen = true
         )
     }
@@ -50,6 +53,7 @@ object SafeCareAlertNotifier {
             text = errorMessage,
             alertMessage = "No se pudo monitorear la zona segura",
             alertAddress = errorMessage,
+            alertLocation = null,
             fullScreen = false
         )
     }
@@ -68,6 +72,7 @@ object SafeCareAlertNotifier {
         text: String,
         alertMessage: String,
         alertAddress: String,
+        alertLocation: Location?,
         fullScreen: Boolean
     ): Boolean {
         val appContext = context.applicationContext
@@ -84,6 +89,10 @@ object SafeCareAlertNotifier {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("EXTRA_MESSAGE", alertMessage)
             putExtra("EXTRA_ADDRESS", alertAddress)
+            alertLocation?.let { location ->
+                putExtra("EXTRA_LATITUDE", location.latitude)
+                putExtra("EXTRA_LONGITUDE", location.longitude)
+            }
         }
 
         val contentIntent = PendingIntent.getActivity(

@@ -21,7 +21,7 @@ import mx.utng.ich.safecare.wearable.data.local.entity.PerfilMonitoreadoEntity
         ZonaSeguraEntity::class,
         PerfilMonitoreadoEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class SafeCareDatabase : RoomDatabase() {

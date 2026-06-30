@@ -12,9 +12,9 @@ interface ZonaSeguraDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertarZonas(zonas: List<ZonaSeguraEntity>)
 
-    @Query("SELECT * FROM zona_segura WHERE id_perfil = :idPerfil AND activa = 1")
+    @Query("SELECT * FROM ZonaSegura WHERE idPerfil = :idPerfil AND activa = 1")
     suspend fun obtenerZonasActivas(idPerfil: String): List<ZonaSeguraEntity>
 
-    @Query("DELETE FROM zona_segura")
+    @Query("DELETE FROM ZonaSegura")
     suspend fun eliminarTodas()
 }

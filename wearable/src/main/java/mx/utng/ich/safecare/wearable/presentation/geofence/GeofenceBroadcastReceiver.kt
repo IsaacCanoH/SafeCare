@@ -61,9 +61,13 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         Log.w(TAG, "Usuario salio de zona segura: ${zoneLabel ?: "zona desconocida"}")
 
         // Lanzar la Activity de alerta a pantalla completa directamente
-        launchAlertActivity(appContext, zoneLabel)
+        launchAlertActivity(appContext, zoneLabel, triggeringLocation)
 
-        SafeCareAlertNotifier.showSafeZoneExitNotification(appContext, zoneLabel)
+        SafeCareAlertNotifier.showSafeZoneExitNotification(
+            context = appContext,
+            zoneLabel = zoneLabel,
+            location = triggeringLocation
+        )
         triggerVibration(appContext)
 
         val pendingResult = goAsync()
@@ -99,30 +103,29 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
             numeroSerie = serialIdentificador,
             bateria = batteryLevel,
             conexion = if (isOnline) "online" else "offline",
-            idPerfil = idPerfil,
-            sincronizado = false
+            estado = if (isOnline) "ACTIVO" else "INACTIVO",
+            idPerfil = idPerfil
         )
         smartwatchDao.insertarOActualizar(smartwatchLocal)
 
         val locationData = triggeringLocation ?: wearLocationReader.getCurrentLocationData()
-        var localUbicacionId: Long? = null
+        var localUbicacionId: String? = null
 
         if (locationData != null) {
             val nuevaUbicacion = UbicacionEntity(
                 latitud = locationData.latitude,
                 longitud = locationData.longitude,
-                idSmartwatch = serialIdentificador,
-                sincronizada = false
+                idSmartwatch = serialIdentificador
             )
-            localUbicacionId = ubicacionDao.insertar(nuevaUbicacion)
+            ubicacionDao.insertar(nuevaUbicacion)
+            localUbicacionId = nuevaUbicacion.idUbicacion
         }
 
         val alertaLocal = AlertaEntity(
             tipoAlerta = "ZONA_SEGURA",
             descripcion = "El usuario ha salido del perimetro de seguridad",
             idPerfil = idPerfil,
-            idUbicacion = localUbicacionId?.toString(),
-            sincronizada = false
+            idUbicacion = localUbicacionId
         )
         alertaDao.insertar(alertaLocal)
     }
@@ -149,11 +152,19 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun launchAlertActivity(context: Context, zoneLabel: String?) {
+    private fun launchAlertActivity(
+        context: Context,
+        zoneLabel: String?,
+        triggeringLocation: Location?
+    ) {
         val intent = Intent(context, AlertActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("EXTRA_MESSAGE", "Saliste de zona segura")
             putExtra("EXTRA_ADDRESS", zoneLabel ?: "Zona segura")
+            triggeringLocation?.let { location ->
+                putExtra("EXTRA_LATITUDE", location.latitude)
+                putExtra("EXTRA_LONGITUDE", location.longitude)
+            }
         }
         context.startActivity(intent)
     }

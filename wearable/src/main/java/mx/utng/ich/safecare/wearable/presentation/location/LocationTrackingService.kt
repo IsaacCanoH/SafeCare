@@ -119,8 +119,7 @@ class LocationTrackingService : Service() {
                     latitud = location.latitude,
                     longitud = location.longitude,
                     fechaHora = location.time.takeIf { it > 0L } ?: System.currentTimeMillis(),
-                    idSmartwatch = Build.MODEL,
-                    sincronizada = false
+                    idSmartwatch = Build.MODEL
                 )
             )
 
@@ -149,7 +148,8 @@ class LocationTrackingService : Service() {
         val serialNumber = Build.MODEL
         val now = System.currentTimeMillis()
         val battery = deviceStatusReader.getBatteryLevel()
-        val connection = if (deviceStatusReader.isOnline()) "online" else "offline"
+        val isOnline = deviceStatusReader.isOnline()
+        val connection = if (isOnline) "online" else "offline"
         val currentStatus = smartwatchDao.obtenerPorNumeroSerie(serialNumber)
 
         val batteryChanged = currentStatus?.bateria != battery
@@ -162,40 +162,19 @@ class LocationTrackingService : Service() {
         }
 
         val idPerfil = currentStatus?.idPerfil ?: SafeCareProfileResolver.resolveProfileId(database)
-        val reason = getStatusSaveReason(
-            hasCurrentStatus = currentStatus != null,
-            batteryChanged = batteryChanged,
-            connectionChanged = connectionChanged
-        )
-
         val smartwatchId = smartwatchDao.insertarOActualizar(
             SmartwatchEntity(
                 numeroSerie = serialNumber,
                 bateria = battery,
                 conexion = connection,
                 ultimaConexion = now,
-                motivo = reason,
-                idPerfil = idPerfil,
-                sincronizado = false
+                estado = if (isOnline) "ACTIVO" else "INACTIVO",
+                idPerfil = idPerfil
             )
         )
 
         smartwatchDao.conservarSoloRegistrosRecientes(MAX_SMARTWATCH_RECORDS)
-        Log.d(TAG, "Estado wearable guardado en smartwatch id=$smartwatchId motivo=$reason")
-    }
-
-    private fun getStatusSaveReason(
-        hasCurrentStatus: Boolean,
-        batteryChanged: Boolean,
-        connectionChanged: Boolean
-    ): String {
-        return when {
-            !hasCurrentStatus -> "INICIAL"
-            batteryChanged && connectionChanged -> "CAMBIO_BATERIA_CONEXION"
-            connectionChanged -> "CAMBIO_CONEXION"
-            batteryChanged -> "CAMBIO_BATERIA"
-            else -> "HEARTBEAT"
-        }
+        Log.d(TAG, "Estado wearable guardado en smartwatch id=$smartwatchId")
     }
 
     private fun startAsForegroundService() {

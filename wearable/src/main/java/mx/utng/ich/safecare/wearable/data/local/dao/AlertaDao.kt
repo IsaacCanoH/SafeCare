@@ -14,30 +14,12 @@ interface AlertaDao {
 
     @Query(
         """
-        SELECT * FROM alertas
-        ORDER BY fechaCreacion DESC
+        SELECT * FROM Alertas
+        ORDER BY fechaHora DESC
         """
     )
     suspend fun obtenerTodas(): List<AlertaEntity>
 
-    @Query(
-        """
-        SELECT * FROM alertas
-        WHERE sincronizada = 0
-        ORDER BY fechaCreacion ASC
-        """
-    )
-    suspend fun obtenerPendientesDeSincronizar(): List<AlertaEntity>
-
-    @Query(
-        """
-        UPDATE alertas
-        SET sincronizada = 1
-        WHERE id = :idAlerta
-        """
-    )
-    suspend fun marcarComoSincronizada(idAlerta: Long)
-
-    @Query("DELETE FROM alertas")
+    @Query("DELETE FROM Alertas")
     suspend fun eliminarTodas()
 }

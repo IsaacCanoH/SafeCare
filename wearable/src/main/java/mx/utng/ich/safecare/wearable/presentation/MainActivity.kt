@@ -210,7 +210,7 @@ class MainActivity : ComponentActivity() {
     private suspend fun actualizarGeofencingEnAndroid(zonas: List<ZonaSeguraEntity>) {
         val safeZones = zonas.map { zona ->
             SafeZoneGeofence(
-                id = zona.id,
+                id = zona.idZona,
                 lat = zona.latitudCentro,
                 lng = zona.longitudCentro,
                 radiusInMeters = zona.radioMetros.toFloat()

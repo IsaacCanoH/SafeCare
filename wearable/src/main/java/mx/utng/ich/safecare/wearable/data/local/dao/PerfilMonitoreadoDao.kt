@@ -11,12 +11,12 @@ interface PerfilMonitoreadoDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertar(perfil: PerfilMonitoreadoEntity)
 
-    @Query("SELECT * FROM perfil_monitoreado WHERE id_perfil = :id LIMIT 1")
+    @Query("SELECT * FROM PerfilMonitoreado WHERE idPerfil = :id LIMIT 1")
     suspend fun obtenerPorId(id: String): PerfilMonitoreadoEntity?
 
-    @Query("SELECT * FROM perfil_monitoreado WHERE estado_actual = 1 LIMIT 1")
+    @Query("SELECT * FROM PerfilMonitoreado WHERE estadoActual = 1 LIMIT 1")
     suspend fun obtenerPerfilActivo(): PerfilMonitoreadoEntity?
 
-    @Query("DELETE FROM perfil_monitoreado")
+    @Query("DELETE FROM PerfilMonitoreado")
     suspend fun eliminarTodo()
 }

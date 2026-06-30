@@ -2,15 +2,16 @@ package mx.utng.ich.safecare.wearable.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.util.UUID
 
-@Entity(tableName = "alertas")
+@Entity(tableName = "Alertas")
 data class AlertaEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0L,
+    @PrimaryKey
+    val idAlerta: String = UUID.randomUUID().toString(),
     val tipoAlerta: String,
     val descripcion: String,
+    val fechaHora: Long = System.currentTimeMillis(),
+    val estado: String = "ACTIVA",
     val idPerfil: String,
-    val idUbicacion: String? = null,
-    val fechaCreacion: Long = System.currentTimeMillis(),
-    val sincronizada: Boolean = false
+    val idUbicacion: String? = null
 )

@@ -64,28 +64,27 @@ class WearStatusController(
                     numeroSerie = serialIdentificador,
                     bateria = batteryLevel,
                     conexion = if (isOnline) "online" else "offline",
-                    idPerfil = idPerfil,
-                    sincronizado = false
+                    estado = if (isOnline) "ACTIVO" else "INACTIVO",
+                    idPerfil = idPerfil
                 )
                 smartwatchDao.insertarOActualizar(smartwatchLocal)
 
-                var localUbicacionId: Long? = null
+                var localUbicacionId: String? = null
                 if (locationData != null) {
                     val nuevaUbicacion = UbicacionEntity(
                         latitud = locationData.latitude,
                         longitud = locationData.longitude,
-                        idSmartwatch = serialIdentificador,
-                        sincronizada = false
+                        idSmartwatch = serialIdentificador
                     )
-                    localUbicacionId = ubicacionDao.insertar(nuevaUbicacion)
+                    ubicacionDao.insertar(nuevaUbicacion)
+                    localUbicacionId = nuevaUbicacion.idUbicacion
                 }
 
                 val alertaLocal = AlertaEntity(
                     tipoAlerta = "SOS",
                     descripcion = "SOS activado desde el SmartWatch",
                     idPerfil = idPerfil,
-                    idUbicacion = localUbicacionId?.toString(),
-                    sincronizada = false
+                    idUbicacion = localUbicacionId
                 )
                 alertaDao.insertar(alertaLocal)
                 
