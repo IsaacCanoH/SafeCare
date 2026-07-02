@@ -70,6 +70,18 @@ Desarrollar una aplicación para dispositivos Wear OS orientada al monitoreo y s
 
 ![Alerta de zona segura](evidencias/01-pantalla-principal.png)
 
+### Registro de alerta SOS en la base de datos
+
+![Registro de alerta boton de panico](evidencias/03-registro-alerta-base-de-datos.png)
+
+### Registro periodico de ubicacion del perfil cuidado
+![Registro periodico](evidencias/04-registro-periodico-en-base-de-datos.png)
+
 ### Alerta al salir de zona segura
 
 ![Alerta de zona segura](evidencias/02-alerta-zona-segura.png)
+
+### Registro de alerta al salir de zona segura
+
+![Alerta de zona segura](evidencias/05-registro-notificacion-en-base-de-datos.png)
+
