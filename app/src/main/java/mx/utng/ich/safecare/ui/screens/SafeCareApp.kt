@@ -17,7 +17,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.utng.ich.safecare.data.local.database.SafeCareAppDatabase
+import mx.utng.ich.safecare.data.remote.SupabaseClient
 import mx.utng.ich.safecare.designsystem.theme.AppTheme
+import io.github.jan.supabase.auth.auth
 import mx.utng.ich.safecare.ui.screens.alerts.AlertsScreen
 import mx.utng.ich.safecare.ui.screens.dashboard.DashboardContent
 import mx.utng.ich.safecare.ui.screens.login.LoginScreen
@@ -27,8 +29,10 @@ import mx.utng.ich.safecare.ui.screens.profile.EditProfileScreen
 import mx.utng.ich.safecare.ui.screens.profile.ProfilesScreen
 import mx.utng.ich.safecare.ui.screens.register.RegisterScreen
 import mx.utng.ich.safecare.ui.screens.zone.CreateSafeZoneScreen
+import mx.utng.ich.safecare.ui.screens.zone.EditSafeZoneScreen
 import mx.utng.ich.safecare.ui.screens.zone.SafeZonesScreen
 import mx.utng.ich.safecare.data.local.entity.PerfilMonitoreadoEntity
+import mx.utng.ich.safecare.data.local.entity.ZonaSeguraEntity
 
 import mx.utng.ich.safecare.ui.viewmodel.AuthState
 import mx.utng.ich.safecare.ui.viewmodel.AuthViewModel
@@ -64,12 +68,15 @@ fun SafeCareApp() {
     
     var currentRootScreen by remember { mutableStateOf(Screen.LOGIN) }
     var bottomNavTab by remember { mutableStateOf("Inicio") }
+    var selectedProfileIdForMap by remember { mutableStateOf<String?>(null) }
     var selectedProfileForEdit by remember { mutableStateOf<PerfilMonitoreadoEntity?>(null) }
+    var selectedZoneForEdit by remember { mutableStateOf<ZonaSeguraEntity?>(null) }
     
     var showNotificationModal by remember { mutableStateOf(false) }
 
     val authState by authViewModel.authState
     val profiles by profileViewModel.profiles.collectAsState()
+    val allZones by zoneViewModel.zones.collectAsState() // Obtenemos todas las zonas
 
     LaunchedEffect(authState) {
         if (authState is AuthState.Success) {
@@ -138,7 +145,10 @@ fun SafeCareApp() {
                             )
                             NavigationBarItem(
                                 selected = bottomNavTab == "Mapa",
-                                onClick = { bottomNavTab = "Mapa" },
+                                onClick = { 
+                                    selectedProfileIdForMap = null
+                                    bottomNavTab = "Mapa" 
+                                },
                                 icon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
                                 label = { Text("Mapa") }
                             )
@@ -166,31 +176,55 @@ fun SafeCareApp() {
                     Box(modifier = Modifier.padding(padding)) {
                         when(bottomNavTab) {
                             "Inicio" -> DashboardContent(
-                                monitoredPersons = profiles.map { 
+                                monitoredPersons = profiles.map { profile -> 
                                     mx.utng.ich.safecare.ui.screens.dashboard.MonitoredPerson(
-                                        id = it.idPerfil,
-                                        name = it.nombre,
-                                        type = it.tipoPerfil,
+                                        id = profile.idPerfil,
+                                        name = profile.nombre,
+                                        type = profile.tipoPerfil,
                                         status = "En línea",
                                         battery = 100,
                                         connection = "WiFi",
                                         lastUpdate = "Ahora",
-                                        isInSafeZone = true
+                                        isInSafeZone = true,
+                                        // Busca todas las zonas seguras globales que pertenezcan a este cuidador
+                                        // (Simplificado: mostramos todas las zonas guardadas)
+                                        safeZonesCount = allZones.size 
                                     )
                                 },
                                 onAddPersonClick = { bottomNavTab = "AgregarPerfil" },
-                                onPersonClick = { bottomNavTab = "Mapa" }
+                                onPersonClick = { person ->
+                                    selectedProfileIdForMap = person.id
+                                    bottomNavTab = "Mapa"
+                                }
                             )
                             "Mapa" -> LiveMapScreen(
                                 profileViewModel = profileViewModel,
                                 zoneViewModel = zoneViewModel,
-                                onBackClick = { bottomNavTab = "Inicio" }
+                                selectedProfileId = selectedProfileIdForMap,
+                                onBackClick = { 
+                                    selectedProfileIdForMap = null
+                                    bottomNavTab = "Inicio" 
+                                }
                             )
                             "Zonas" -> SafeZonesScreen(
                                 viewModel = zoneViewModel,
                                 onBackClick = { bottomNavTab = "Inicio" },
-                                onAddZoneClick = { bottomNavTab = "CrearZona" }
+                                onAddZoneClick = { bottomNavTab = "CrearZona" },
+                                onEditZoneClick = { zone ->
+                                    selectedZoneForEdit = zone
+                                    bottomNavTab = "EditarZona"
+                                }
                             )
+                            "EditarZona" -> {
+                                selectedZoneForEdit?.let { zone ->
+                                    EditSafeZoneScreen(
+                                        zone = zone,
+                                        viewModel = zoneViewModel,
+                                        onBackClick = { bottomNavTab = "Zonas" },
+                                        onSaveSuccess = { bottomNavTab = "Zonas" }
+                                    )
+                                }
+                            }
                             "Alertas" -> AlertsScreen(viewModel = alertViewModel)
                             "Perfiles" -> ProfilesScreen(
                                 viewModel = profileViewModel,
@@ -219,7 +253,8 @@ fun SafeCareApp() {
                             )
                             "CrearZona" -> CreateSafeZoneScreen(
                                 viewModel = zoneViewModel,
-                                idPerfil = profiles.firstOrNull()?.idPerfil ?: "",
+                                // Pasamos el ID del Cuidador (usuario logueado) en lugar de un perfil individual
+                                idPerfil = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: "",
                                 onBackClick = { bottomNavTab = "Zonas" },
                                 onSaveSuccess = { 
                                     bottomNavTab = "Zonas" 

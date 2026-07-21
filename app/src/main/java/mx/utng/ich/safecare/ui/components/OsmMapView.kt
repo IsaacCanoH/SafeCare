@@ -2,6 +2,7 @@ package mx.utng.ich.safecare.ui.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -24,6 +25,11 @@ fun OsmMapView(
     val context = LocalContext.current
     val mapView = remember { MapView(context) }
 
+    // Efecto para actualizar el centro cuando cambia externamente (ej. buscador)
+    LaunchedEffect(center) {
+        mapView.controller.animateTo(center)
+    }
+
     DisposableEffect(Unit) {
         Configuration.getInstance().userAgentValue = context.packageName
         onDispose {
@@ -38,10 +44,15 @@ fun OsmMapView(
                 controller.setZoom(zoomLevel)
                 controller.setCenter(center)
                 setMultiTouchControls(true)
+                // Permitir que el mapa maneje sus propios eventos táctiles
+                isClickable = true
                 onMapReady(this)
             }
         },
-        modifier = modifier
+        modifier = modifier,
+        update = {
+            // Se puede usar para actualizaciones de vista si es necesario
+        }
     )
 }
 

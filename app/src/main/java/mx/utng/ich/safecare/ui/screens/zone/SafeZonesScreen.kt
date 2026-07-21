@@ -47,7 +47,7 @@ fun SafeZonesScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (isLoading) {
+        if (isLoading && zones.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
@@ -64,7 +64,11 @@ fun SafeZonesScreen(
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
                 items(zones) { zone ->
-                    ZoneItem(zone = zone, onEditClick = { onEditZoneClick(zone) })
+                    ZoneItem(
+                        zone = zone, 
+                        onEditClick = { onEditZoneClick(zone) },
+                        onToggleStatus = { viewModel.toggleZoneStatus(zone, it) }
+                    )
                 }
             }
         }
@@ -72,7 +76,11 @@ fun SafeZonesScreen(
 }
 
 @Composable
-fun ZoneItem(zone: ZonaSeguraEntity, onEditClick: () -> Unit) {
+fun ZoneItem(
+    zone: ZonaSeguraEntity, 
+    onEditClick: () -> Unit,
+    onToggleStatus: (Boolean) -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -86,22 +94,38 @@ fun ZoneItem(zone: ZonaSeguraEntity, onEditClick: () -> Unit) {
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                    .background(
+                        if (zone.activa) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Icon(
+                    Icons.Default.Security, 
+                    contentDescription = null, 
+                    tint = if (zone.activa) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                )
             }
 
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = zone.nombre, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(text = "Radio: ${zone.radioMetros.toInt()}m", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = zone.nombre, 
+                    fontWeight = FontWeight.Bold, 
+                    fontSize = 16.sp,
+                    color = if (zone.activa) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
+                )
+                Text(
+                    text = "Radio: ${zone.radioMetros.toInt()}m", 
+                    fontSize = 12.sp, 
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             Switch(
                 checked = zone.activa,
-                onCheckedChange = { /* Toggle */ }
+                onCheckedChange = onToggleStatus
             )
             
             IconButton(onClick = onEditClick) {
