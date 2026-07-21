@@ -8,6 +8,7 @@ import androidx.work.WorkerParameters
 import mx.utng.ich.safecare.wearable.data.local.database.DatabaseProvider
 import mx.utng.ich.safecare.wearable.data.local.entity.SmartwatchEntity
 import mx.utng.ich.safecare.wearable.data.local.entity.UbicacionEntity
+import mx.utng.ich.safecare.wearable.data.repository.SupabaseRepository
 import mx.utng.ich.safecare.wearable.presentation.location.WearLocationReader
 import mx.utng.ich.safecare.wearable.presentation.sensors.DeviceStatusReader
 
@@ -18,6 +19,7 @@ class StatusWorker(
 
     private val deviceStatusReader = DeviceStatusReader(context)
     private val wearLocationReader = WearLocationReader(context)
+    private val supabaseRepository = SupabaseRepository()
 
     override suspend fun doWork(): Result {
         Log.i("StatusWorker", "Ejecutando monitoreo periódico...")
@@ -25,6 +27,15 @@ class StatusWorker(
         val battery = deviceStatusReader.getBatteryLevel()
         val isOnline = deviceStatusReader.isOnline()
         val serialNumber = Build.MODEL
+
+        // 1. Guardar en Supabase (Sincronización Global)
+        if (isOnline) {
+            supabaseRepository.updateSmartWatchStatus(
+                numeroSerie = serialNumber,
+                bateria = battery,
+                conexion = "online"
+            )
+        }
 
         val database = DatabaseProvider.getDatabase(applicationContext)
         val smartwatchDao = database.smartwatchDao()
