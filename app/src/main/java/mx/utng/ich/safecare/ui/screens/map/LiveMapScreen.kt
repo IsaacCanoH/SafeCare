@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mx.utng.ich.safecare.data.local.entity.PerfilMonitoreadoEntity
 import mx.utng.ich.safecare.ui.components.OsmMapView
 import mx.utng.ich.safecare.ui.components.addSafeZoneCircle
 import mx.utng.ich.safecare.ui.components.addSimpleMarker
@@ -26,35 +27,46 @@ import org.osmdroid.util.GeoPoint
 fun LiveMapScreen(
     profileViewModel: ProfileViewModel,
     zoneViewModel: SafeZoneViewModel,
+    selectedProfileId: String? = null, // ID opcional para filtrado
     onBackClick: () -> Unit = {}
 ) {
     val profiles by profileViewModel.profiles.collectAsState()
     val zones by zoneViewModel.zones.collectAsState()
     
-    // Por simplicidad, seleccionamos el primer perfil si hay alguno
-    val selectedProfile = profiles.firstOrNull()
+    // Filtrar perfiles según si venimos de un perfil específico o de la barra global
+    val displayedProfiles = if (selectedProfileId != null) {
+        profiles.filter { it.idPerfil == selectedProfileId }
+    } else {
+        profiles
+    }
+
+    // Perfil para mostrar en la tarjeta inferior (el primero de la lista mostrada)
+    val cardProfile = displayedProfiles.firstOrNull()
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Map
+        // Mapa
         OsmMapView(
             modifier = Modifier.fillMaxSize(),
             center = GeoPoint(21.1526, -100.9312),
             onMapReady = { mapView ->
-                // Añadir marcadores para todos los perfiles (si tienen ubicación, aquí simulamos)
-                profiles.forEach { profile ->
-                    val point = GeoPoint(21.1526, -100.9312) // En una app real vendría de UbicacionEntity
+                mapView.overlays.clear()
+                
+                // 1. Mostrar marcadores de los perfiles filtrados
+                displayedProfiles.forEach { profile ->
+                    // En una app real, estas coordenadas vendrían de la tabla Ubicacion
+                    val point = GeoPoint(21.1526, -100.9312) 
                     mapView.addSimpleMarker(point, profile.nombre)
                 }
                 
-                // Añadir círculos para las zonas seguras
-                zones.forEach { zone ->
+                // 2. Mostrar todas las zonas seguras (Opción A: Familiares)
+                zones.filter { it.activa }.forEach { zone ->
                     val point = GeoPoint(zone.latitudCentro, zone.longitudCentro)
                     mapView.addSafeZoneCircle(point, zone.radioMetros, 0x445A4699.toInt())
                 }
             }
         )
 
-        // Local Top Bar
+        // Barra Superior Local
         Surface(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             color = Color.White.copy(alpha = 0.9f),
@@ -69,7 +81,8 @@ fun LiveMapScreen(
                     Icon(Icons.Default.ArrowBack, contentDescription = null)
                 }
                 Text(
-                    "Mapa en tiempo real", 
+                    text = if (selectedProfileId != null) "Ubicación de ${cardProfile?.nombre ?: ""}" 
+                          else "Mapa Familiar", 
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleMedium, 
                     fontWeight = FontWeight.Bold
@@ -77,8 +90,8 @@ fun LiveMapScreen(
             }
         }
 
-        // Overlay Details (Bottom Card)
-        if (selectedProfile != null) {
+        // Tarjeta inferior (Solo si hay perfiles para mostrar)
+        if (cardProfile != null) {
             Card(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -103,12 +116,21 @@ fun LiveMapScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = selectedProfile.nombre, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(text = cardProfile.nombre, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF4CAF50)))
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(text = "En línea", fontSize = 11.sp, color = Color(0xFF2E7D32))
                             }
+                        }
+
+                        // Info de batería/conexión (Simulada o del Smartwatch)
+                        Column(horizontalAlignment = Alignment.End) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(text = "85%", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Icon(Icons.Default.BatteryFull, contentDescription = null, modifier = Modifier.size(14.dp))
+                            }
+                            Text(text = "WiFi", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
 
@@ -116,7 +138,7 @@ fun LiveMapScreen(
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(
-                            onClick = { /* Alert */ },
+                            onClick = { /* Alerta manual */ },
                             modifier = Modifier.weight(1f).height(44.dp),
                             shape = RoundedCornerShape(10.dp)
                         ) {

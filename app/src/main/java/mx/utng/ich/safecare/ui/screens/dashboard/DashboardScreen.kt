@@ -28,6 +28,7 @@ data class MonitoredPerson(
     val connection: String,
     val lastUpdate: String,
     val isInSafeZone: Boolean,
+    val safeZonesCount: Int = 0, // Nuevo campo
     val isSosActive: Boolean = false
 )
 
@@ -135,7 +136,7 @@ fun PersonCard(person: MonitoredPerson, onClick: () -> Unit) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = person.type,
+                    text = "${person.type} • ${person.safeZonesCount} zonas seguras",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

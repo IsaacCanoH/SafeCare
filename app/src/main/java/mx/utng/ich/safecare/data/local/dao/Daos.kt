@@ -26,6 +26,9 @@ interface ZonaSeguraDao {
     @Delete
     suspend fun eliminar(zona: ZonaSeguraEntity)
 
+    @Query("SELECT * FROM ZonaSegura")
+    suspend fun obtenerTodas(): List<ZonaSeguraEntity>
+
     @Query("SELECT * FROM ZonaSegura WHERE idPerfil = :idPerfil")
     suspend fun obtenerPorPerfil(idPerfil: String): List<ZonaSeguraEntity>
 }

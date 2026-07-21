@@ -168,4 +168,49 @@ class SupabaseRepository {
             false
         }
     }
+
+    suspend fun updateSafeZone(
+        idZona: String,
+        nombre: String,
+        lat: Double,
+        lng: Double,
+        radio: Double,
+        activa: Boolean? = null
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val zoneJson = buildJsonObject {
+                put("nombre", nombre)
+                put("latitud_centro", lat)
+                put("longitud_centro", lng)
+                put("radio_metros", radio)
+                activa?.let { put("activa", it) }
+            }
+            client.postgrest["zona_segura"].update(zoneJson) {
+                filter {
+                    eq("id_zona", idZona)
+                }
+            }
+            true
+        } catch (e: Exception) {
+            Log.e("SupabaseRepo", "Error updating zone: ${e.message}")
+            false
+        }
+    }
+
+    suspend fun toggleSafeZoneStatus(idZona: String, activa: Boolean): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val updateData = buildJsonObject {
+                put("activa", activa)
+            }
+            client.postgrest["zona_segura"].update(updateData) {
+                filter {
+                    eq("id_zona", idZona)
+                }
+            }
+            true
+        } catch (e: Exception) {
+            Log.e("SupabaseRepo", "Error toggling zone: ${e.message}")
+            false
+        }
+    }
 }

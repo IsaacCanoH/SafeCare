@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import mx.utng.ich.safecare.data.local.entity.ZonaSeguraEntity
 import mx.utng.ich.safecare.ui.components.OsmMapView
 import mx.utng.ich.safecare.ui.components.addSafeZoneCircle
 import mx.utng.ich.safecare.ui.viewmodel.SafeZoneViewModel
@@ -30,15 +31,15 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateSafeZoneScreen(
+fun EditSafeZoneScreen(
+    zone: ZonaSeguraEntity,
     viewModel: SafeZoneViewModel,
-    idPerfil: String = "",
     onBackClick: () -> Unit = {},
     onSaveSuccess: () -> Unit = {}
 ) {
-    var zoneName by remember { mutableStateOf("") }
-    var radius by remember { mutableFloatStateOf(200f) }
-    var centerPoint by remember { mutableStateOf(GeoPoint(21.1526, -100.9312)) }
+    var zoneName by remember { mutableStateOf(zone.nombre) }
+    var radius by remember { mutableFloatStateOf(zone.radioMetros.toFloat()) }
+    var centerPoint by remember { mutableStateOf(GeoPoint(zone.latitudCentro, zone.longitudCentro)) }
     var searchQuery by remember { mutableStateOf("") }
     
     val searchResults by viewModel.searchResults.collectAsState()
@@ -46,10 +47,8 @@ fun CreateSafeZoneScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Referencia persistente al overlay del círculo para poder actualizarlo
     var mapViewInstance by remember { mutableStateOf<MapView?>(null) }
 
-    // Efecto para actualizar el círculo cuando cambie el radio o el punto central
     LaunchedEffect(radius, centerPoint, mapViewInstance) {
         mapViewInstance?.let { mapView ->
             mapView.overlays.removeAll { it !is MapEventsOverlay }
@@ -62,7 +61,7 @@ fun CreateSafeZoneScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Crear zona segura", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
+                title = { Text("Editar zona segura", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.Default.ArrowBack, contentDescription = null)
@@ -76,9 +75,9 @@ fun CreateSafeZoneScreen(
                             if (zoneName.isBlank()) {
                                 scope.launch { snackbarHostState.showSnackbar("Ingresa un nombre para la zona") }
                             } else {
-                                viewModel.addZone(zoneName, centerPoint.latitude, centerPoint.longitude, radius.toDouble(), idPerfil) { success ->
+                                viewModel.updateZone(zone.idZona, zoneName, centerPoint.latitude, centerPoint.longitude, radius.toDouble(), zone.idPerfil) { success ->
                                     if (success) onSaveSuccess()
-                                    else scope.launch { snackbarHostState.showSnackbar("Error al guardar") }
+                                    else scope.launch { snackbarHostState.showSnackbar("Error al actualizar") }
                                 }
                             }
                         }) {
@@ -94,7 +93,6 @@ fun CreateSafeZoneScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Buscador y Resultados (Z-Index alto para evitar que el mapa lo tape)
             Box(modifier = Modifier.fillMaxWidth().zIndex(2f)) {
                 Column {
                     OutlinedTextField(
@@ -106,7 +104,7 @@ fun CreateSafeZoneScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp),
-                        placeholder = { Text("Buscar estado, ciudad o calle...") },
+                        placeholder = { Text("Buscar nueva ubicación...") },
                         trailingIcon = { 
                             if (searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { searchQuery = ""; viewModel.clearSearch() }) {
@@ -147,18 +145,15 @@ fun CreateSafeZoneScreen(
                 }
             }
 
-            // Mapa
             Box(modifier = Modifier.weight(1f).zIndex(1f)) {
                 OsmMapView(
                     modifier = Modifier.fillMaxSize(),
                     center = centerPoint,
                     onMapReady = { mapView ->
                         mapViewInstance = mapView
-                        
-                        // Añadir gestor de eventos de toque
                         val eventsOverlay = MapEventsOverlay(object : MapEventsReceiver {
                             override fun singleTapConfirmedHelper(p: GeoPoint): Boolean {
-                                centerPoint = p // Esto disparará el LaunchedEffect
+                                centerPoint = p
                                 return true
                             }
                             override fun longPressHelper(p: GeoPoint): Boolean = false
@@ -167,14 +162,13 @@ fun CreateSafeZoneScreen(
                     }
                 )
 
-                // Instrucción flotante
                 Surface(
                     modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp),
                     color = Color.Black.copy(alpha = 0.6f),
                     shape = CircleShape
                 ) {
                     Text(
-                        "Toca el mapa para cambiar la ubicación",
+                        "Toca el mapa para cambiar el centro",
                         color = Color.White,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
@@ -182,21 +176,19 @@ fun CreateSafeZoneScreen(
                 }
             }
 
-            // Panel de Control
             Card(
                 modifier = Modifier.fillMaxWidth().zIndex(2f),
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 elevation = CardDefaults.cardElevation(16.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Text(text = "Ajustes de zona", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(text = "Editar detalles", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     
                     OutlinedTextField(
                         value = zoneName,
                         onValueChange = { zoneName = it },
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                         label = { Text("Nombre de la zona") },
-                        placeholder = { Text("Ej. Casa, Escuela") },
                         shape = RoundedCornerShape(12.dp)
                     )
 
