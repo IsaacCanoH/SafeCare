@@ -13,9 +13,11 @@ import kotlinx.coroutines.launch
 import mx.utng.ich.safecare.data.local.database.SafeCareAppDatabase
 import mx.utng.ich.safecare.data.local.entity.AlertaEntity
 import mx.utng.ich.safecare.data.local.entity.UbicacionEntity
+import mx.utng.ich.safecare.data.repository.SupabaseRepository
 
 class MobileDataLayerService : WearableListenerService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val supabaseRepository = SupabaseRepository()
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         dataEvents
@@ -23,7 +25,10 @@ class MobileDataLayerService : WearableListenerService() {
             .forEach { event ->
                 val dataItem = event.dataItem.freeze()
                 serviceScope.launch {
-                    runCatching { processDataItem(dataItem) }
+                    runCatching {
+                        processDataItem(dataItem)
+                        syncRecentRoomLocations()
+                    }
                         .onFailure { Log.e(TAG, "No se pudo procesar Data Layer", it) }
                 }
             }
@@ -57,18 +62,17 @@ class MobileDataLayerService : WearableListenerService() {
                 val locationId = data.getString(KEY_LOCATION_ID)
                 if (locationId != null && data.containsKey(KEY_LATITUDE)) {
                     val watchId = data.getString(KEY_WATCH_ID) ?: return
-                    database.ubicacionDao().insertar(
-                        UbicacionEntity(
+                    val location = UbicacionEntity(
                             idUbicacion = locationId,
                             latitud = data.getDouble(KEY_LATITUDE),
                             longitud = data.getDouble(KEY_LONGITUDE),
                             fechaHora = data.getLong(KEY_TIMESTAMP),
                             idSmartwatch = watchId
                         )
-                    )
+                    database.ubicacionDao().insertar(location)
+                    supabaseRepository.saveLocation(location)
                 }
-                database.alertaDao().insertar(
-                    AlertaEntity(
+                val alert = AlertaEntity(
                         idAlerta = alertId,
                         tipoAlerta = data.getString(KEY_ALERT_TYPE) ?: "ALERTA",
                         descripcion = data.getString(KEY_DESCRIPTION) ?: "",
@@ -77,22 +81,32 @@ class MobileDataLayerService : WearableListenerService() {
                         idPerfil = profileId,
                         idUbicacion = locationId
                     )
-                )
+                database.alertaDao().insertar(alert)
+                supabaseRepository.saveAlert(alert)
             }
 
             dataItem.uri.path?.startsWith(PATH_LOCATION) == true -> {
                 val locationId = data.getString(KEY_LOCATION_ID) ?: return
                 val watchId = data.getString(KEY_WATCH_ID) ?: return
-                database.ubicacionDao().insertar(
-                    UbicacionEntity(
+                val location = UbicacionEntity(
                         idUbicacion = locationId,
                         latitud = data.getDouble(KEY_LATITUDE),
                         longitud = data.getDouble(KEY_LONGITUDE),
                         fechaHora = data.getLong(KEY_TIMESTAMP),
                         idSmartwatch = watchId
                     )
-                )
+                database.ubicacionDao().insertar(location)
+                supabaseRepository.saveLocation(location)
             }
+        }
+    }
+
+    private suspend fun syncRecentRoomLocations() {
+        val locations = SafeCareAppDatabase.getDatabase(this)
+            .ubicacionDao()
+            .obtenerRecientes()
+        locations.forEach { location ->
+            supabaseRepository.saveLocation(location)
         }
     }
 

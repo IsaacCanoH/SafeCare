@@ -121,6 +121,7 @@ fun AddProfileScreen(
                             name,
                             edad,
                             selectedType,
+                            birthDate,
                             if (selectedType != "Cuidador") selectedWatch else null
                         ) { success ->
                             if (success) onSaveSuccess()
@@ -309,6 +310,7 @@ fun AddProfileScreen(
                         name,
                         edad,
                         selectedType,
+                        birthDate,
                         if (selectedType != "Cuidador") selectedWatch else null
                     ) { success ->
                         if (success) onSaveSuccess()

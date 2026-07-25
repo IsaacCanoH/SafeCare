@@ -99,6 +99,12 @@ class WearStatusController(
                     idUbicacion = localUbicacionId
                 )
                 alertaDao.insertar(alertaLocal)
+                if (isOnline) {
+                    val savedRemotely = SupabaseRepository().saveAlert(alertaLocal)
+                    if (!savedRemotely) {
+                        Log.w(TAG, "SOS pendiente de sincronización por el móvil")
+                    }
+                }
                 WearDataPublisher(context).publishAlert(
                     serialIdentificador,
                     alertaLocal,

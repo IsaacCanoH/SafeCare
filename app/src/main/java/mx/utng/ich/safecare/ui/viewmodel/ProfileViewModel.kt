@@ -87,6 +87,7 @@ class ProfileViewModel(
         nombre: String,
         edad: Int,
         tipo: String,
+        fechaNacimiento: String?,
         selectedWatch: AvailableWearDevice?,
         onComplete: (Boolean) -> Unit
     ) {
@@ -107,7 +108,8 @@ class ProfileViewModel(
                     edad,
                     tipo,
                     userId,
-                    selectedWatch?.watchInstallationId
+                    selectedWatch?.watchInstallationId,
+                    fechaNacimiento
                 )
                 if (idPerfil != null) {
                     Log.d("ProfileVM", "Supabase profile created: $idPerfil. Now saving to Room...")
@@ -116,6 +118,7 @@ class ProfileViewModel(
                         idPerfil = idPerfil,
                         nombre = nombre,
                         edad = edad,
+                        fechaNacimiento = fechaNacimiento,
                         tipoPerfil = tipo,
                         idCuidador = userId
                     )
