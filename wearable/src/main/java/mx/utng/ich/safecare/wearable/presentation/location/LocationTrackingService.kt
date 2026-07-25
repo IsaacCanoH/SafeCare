@@ -12,15 +12,13 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.os.Build
+import android.os.Bundle
 import android.os.IBinder
+import android.os.SystemClock
 import android.util.Log
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,43 +27,54 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mx.utng.ich.safecare.wearable.R
+import mx.utng.ich.safecare.wearable.data.datalayer.WearIdentityStore
+import mx.utng.ich.safecare.wearable.data.datalayer.WearDataPublisher
 import mx.utng.ich.safecare.wearable.data.local.SafeCareProfileResolver
 import mx.utng.ich.safecare.wearable.data.local.database.DatabaseProvider
 import mx.utng.ich.safecare.wearable.data.local.entity.SmartwatchEntity
 import mx.utng.ich.safecare.wearable.data.local.entity.UbicacionEntity
 import mx.utng.ich.safecare.wearable.presentation.MainActivity
+import mx.utng.ich.safecare.wearable.presentation.geofence.SafeZoneMonitor
 import mx.utng.ich.safecare.wearable.presentation.sensors.DeviceStatusReader
+import mx.utng.ich.safecare.wearable.data.repository.SupabaseRepository
 
 class LocationTrackingService : Service() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var locationManager: LocationManager
     private lateinit var deviceStatusReader: DeviceStatusReader
+    private lateinit var safeZoneMonitor: SafeZoneMonitor
+    private val supabaseRepository = SupabaseRepository()
     private var isTrackingStarted = false
     private var isStatusMonitoringStarted = false
 
-    private val locationRequest = LocationRequest.Builder(
-        Priority.PRIORITY_HIGH_ACCURACY,
-        LOCATION_INTERVAL_MILLIS
-    )
-        .setMinUpdateIntervalMillis(LOCATION_INTERVAL_MILLIS)
-        .setMaxUpdateDelayMillis(LOCATION_INTERVAL_MILLIS)
-        .setWaitForAccurateLocation(false)
-        .build()
-
-    private val locationCallback = object : LocationCallback() {
-        override fun onLocationResult(result: LocationResult) {
-            result.locations.forEach { location ->
+    private val locationListener = object : LocationListener {
+        override fun onLocationChanged(location: Location) {
+            if (isUsableWatchGpsLocation(location)) {
                 saveLocation(location)
+            } else {
+                Log.w(
+                    TAG,
+                    "Lectura GPS descartada: provider=${location.provider}, " +
+                            "ageMs=${locationAgeMillis(location)}, accuracy=${location.accuracy}"
+                )
             }
         }
+
+        override fun onProviderEnabled(provider: String) = Unit
+        override fun onProviderDisabled(provider: String) {
+            Log.w(TAG, "Proveedor GPS del reloj deshabilitado: $provider")
+        }
+        @Deprecated("Deprecated in Android")
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
     }
 
     override fun onCreate() {
         super.onCreate()
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        locationManager = getSystemService(LocationManager::class.java)
         deviceStatusReader = DeviceStatusReader(this)
+        safeZoneMonitor = SafeZoneMonitor(this)
         ensureNotificationChannel()
     }
 
@@ -85,7 +94,7 @@ class LocationTrackingService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        fusedLocationClient.removeLocationUpdates(locationCallback)
+        locationManager.removeUpdates(locationListener)
         serviceScope.cancel()
         super.onDestroy()
     }
@@ -96,17 +105,41 @@ class LocationTrackingService : Service() {
             return
         }
 
-        fusedLocationClient.requestLocationUpdates(
-            locationRequest,
-            locationCallback,
-            mainLooper
-        ).addOnSuccessListener {
-            isTrackingStarted = true
-            Log.i(TAG, "Tracking de ubicacion iniciado cada ${LOCATION_INTERVAL_MILLIS / 1000}s")
-        }.addOnFailureListener { exception ->
-            Log.e(TAG, "No se pudo iniciar tracking de ubicacion", exception)
-            stopSelf()
+        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            Log.w(TAG, "GPS del reloj deshabilitado; no se guardarán coordenadas del teléfono")
+            return
         }
+
+        locationManager.requestLocationUpdates(
+            LocationManager.GPS_PROVIDER,
+            LOCATION_INTERVAL_MILLIS,
+            MIN_LOCATION_DISTANCE_METERS,
+            locationListener,
+            mainLooper
+        )
+        run {
+            isTrackingStarted = true
+            Log.i(
+                TAG,
+                "Tracking GPS del reloj iniciado cada ${LOCATION_INTERVAL_MILLIS / 1000}s"
+            )
+        }
+    }
+
+    private fun isUsableWatchGpsLocation(location: Location): Boolean {
+        return location.provider == LocationManager.GPS_PROVIDER &&
+                location.latitude in -90.0..90.0 &&
+                location.longitude in -180.0..180.0 &&
+                locationAgeMillis(location) <= MAX_LOCATION_AGE_MILLIS &&
+                (!location.hasAccuracy() || location.accuracy <= MAX_ACCURACY_METERS)
+    }
+
+    private fun locationAgeMillis(location: Location): Long {
+        val elapsedNanos = location.elapsedRealtimeNanos
+        if (elapsedNanos <= 0L) return Long.MAX_VALUE
+        return (
+            SystemClock.elapsedRealtimeNanos() - elapsedNanos
+        ).coerceAtLeast(0L) / 1_000_000L
     }
 
     private fun saveLocation(location: Location) {
@@ -114,14 +147,19 @@ class LocationTrackingService : Service() {
             val database = DatabaseProvider.getDatabase(applicationContext)
             val ubicacionDao = database.ubicacionDao()
 
-            val insertedId = ubicacionDao.insertar(
-                UbicacionEntity(
-                    latitud = location.latitude,
-                    longitud = location.longitude,
-                    fechaHora = location.time.takeIf { it > 0L } ?: System.currentTimeMillis(),
-                    idSmartwatch = Build.MODEL
-                )
+            val locationEntity = UbicacionEntity(
+                latitud = location.latitude,
+                longitud = location.longitude,
+                fechaHora = location.time.takeIf { it > 0L } ?: System.currentTimeMillis(),
+                idSmartwatch = WearIdentityStore(applicationContext).getOrCreateWatchId()
             )
+            val insertedId = ubicacionDao.insertar(locationEntity)
+            WearDataPublisher(applicationContext).publishLocation(locationEntity)
+            safeZoneMonitor.evaluate(location)
+
+            if (deviceStatusReader.isOnline()) {
+                supabaseRepository.saveLocation(locationEntity)
+            }
 
             ubicacionDao.conservarSoloRegistrosRecientes(MAX_LOCATION_RECORDS)
             Log.d(TAG, "Ubicacion guardada id=$insertedId")
@@ -145,7 +183,7 @@ class LocationTrackingService : Service() {
     private suspend fun saveStatusIfNeeded() {
         val database = DatabaseProvider.getDatabase(applicationContext)
         val smartwatchDao = database.smartwatchDao()
-        val serialNumber = Build.MODEL
+        val serialNumber = WearIdentityStore(applicationContext).getOrCreateWatchId()
         val now = System.currentTimeMillis()
         val battery = deviceStatusReader.getBatteryLevel()
         val isOnline = deviceStatusReader.isOnline()
@@ -162,8 +200,8 @@ class LocationTrackingService : Service() {
         }
 
         val idPerfil = currentStatus?.idPerfil ?: SafeCareProfileResolver.resolveProfileId(database)
-        val smartwatchId = smartwatchDao.insertarOActualizar(
-            SmartwatchEntity(
+        val status = SmartwatchEntity(
+                idSmartwatch = serialNumber,
                 numeroSerie = serialNumber,
                 bateria = battery,
                 conexion = connection,
@@ -171,7 +209,8 @@ class LocationTrackingService : Service() {
                 estado = if (isOnline) "ACTIVO" else "INACTIVO",
                 idPerfil = idPerfil
             )
-        )
+        val smartwatchId = smartwatchDao.insertarOActualizar(status)
+        WearDataPublisher(applicationContext).publishStatus(status)
 
         smartwatchDao.conservarSoloRegistrosRecientes(MAX_SMARTWATCH_RECORDS)
         Log.d(TAG, "Estado wearable guardado en smartwatch id=$smartwatchId")
@@ -239,6 +278,9 @@ class LocationTrackingService : Service() {
         private const val TRACKING_NOTIFICATION_ID = 2101
         private const val TRACKING_REQUEST_CODE = 3101
         private const val LOCATION_INTERVAL_MILLIS = 5_000L
+        private const val MIN_LOCATION_DISTANCE_METERS = 0f
+        private const val MAX_LOCATION_AGE_MILLIS = 30_000L
+        private const val MAX_ACCURACY_METERS = 200f
         private const val MAX_LOCATION_RECORDS = 5_000
         private const val STATUS_CHECK_INTERVAL_MILLIS = 5_000L
         private const val STATUS_HEARTBEAT_INTERVAL_MILLIS = 60_000L

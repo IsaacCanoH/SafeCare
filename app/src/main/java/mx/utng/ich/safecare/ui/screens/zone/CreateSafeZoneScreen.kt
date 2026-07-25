@@ -22,6 +22,7 @@ import androidx.compose.ui.zIndex
 import mx.utng.ich.safecare.ui.components.OsmMapView
 import mx.utng.ich.safecare.ui.components.addSafeZoneCircle
 import mx.utng.ich.safecare.ui.viewmodel.SafeZoneViewModel
+import mx.utng.ich.safecare.data.local.entity.PerfilMonitoreadoEntity
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.views.overlay.MapEventsOverlay
@@ -32,7 +33,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun CreateSafeZoneScreen(
     viewModel: SafeZoneViewModel,
-    idPerfil: String = "",
+    profiles: List<PerfilMonitoreadoEntity> = emptyList(),
     onBackClick: () -> Unit = {},
     onSaveSuccess: () -> Unit = {}
 ) {
@@ -40,6 +41,8 @@ fun CreateSafeZoneScreen(
     var radius by remember { mutableFloatStateOf(200f) }
     var centerPoint by remember { mutableStateOf(GeoPoint(21.1526, -100.9312)) }
     var searchQuery by remember { mutableStateOf("") }
+    var selectedProfile by remember(profiles) { mutableStateOf(profiles.firstOrNull()) }
+    var profileMenuExpanded by remember { mutableStateOf(false) }
     
     val searchResults by viewModel.searchResults.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -76,7 +79,16 @@ fun CreateSafeZoneScreen(
                             if (zoneName.isBlank()) {
                                 scope.launch { snackbarHostState.showSnackbar("Ingresa un nombre para la zona") }
                             } else {
-                                viewModel.addZone(zoneName, centerPoint.latitude, centerPoint.longitude, radius.toDouble(), idPerfil) { success ->
+                                val profileId = selectedProfile?.idPerfil
+                                if (profileId == null) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            "Primero registra un perfil monitoreado"
+                                        )
+                                    }
+                                    return@TextButton
+                                }
+                                viewModel.addZone(zoneName, centerPoint.latitude, centerPoint.longitude, radius.toDouble(), profileId) { success ->
                                     if (success) onSaveSuccess()
                                     else scope.launch { snackbarHostState.showSnackbar("Error al guardar") }
                                 }
@@ -190,6 +202,45 @@ fun CreateSafeZoneScreen(
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(text = "Ajustes de zona", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+
+                    ExposedDropdownMenuBox(
+                        expanded = profileMenuExpanded,
+                        onExpandedChange = {
+                            if (profiles.isNotEmpty()) {
+                                profileMenuExpanded = !profileMenuExpanded
+                            }
+                        }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedProfile?.nombre ?: "",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Perfil monitoreado") },
+                            placeholder = { Text("No hay perfiles registrados") },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(
+                                    expanded = profileMenuExpanded
+                                )
+                            },
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = profileMenuExpanded,
+                            onDismissRequest = { profileMenuExpanded = false }
+                        ) {
+                            profiles.forEach { profile ->
+                                DropdownMenuItem(
+                                    text = { Text(profile.nombre) },
+                                    onClick = {
+                                        selectedProfile = profile
+                                        profileMenuExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
                     
                     OutlinedTextField(
                         value = zoneName,

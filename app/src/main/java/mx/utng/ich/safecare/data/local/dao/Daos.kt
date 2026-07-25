@@ -1,6 +1,7 @@
 package mx.utng.ich.safecare.data.local.dao
 
 import androidx.room.*
+import kotlinx.coroutines.flow.Flow
 import mx.utng.ich.safecare.data.local.entity.*
 
 @Dao
@@ -40,4 +41,53 @@ interface SmartwatchDao {
 
     @Query("SELECT * FROM SmartWatch WHERE idPerfil = :idPerfil LIMIT 1")
     suspend fun obtenerPorPerfil(idPerfil: String): SmartwatchEntity?
+
+    @Query("SELECT * FROM SmartWatch WHERE watchInstallationId = :watchId LIMIT 1")
+    suspend fun obtenerPorWatchId(watchId: String): SmartwatchEntity?
+
+    @Query("DELETE FROM SmartWatch WHERE idPerfil = :idPerfil")
+    suspend fun eliminarPorPerfil(idPerfil: String)
+}
+
+@Dao
+interface AlertaDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertar(alerta: AlertaEntity)
+
+    @Query(
+        """
+        SELECT a.*, p.nombre AS nombrePerfil
+        FROM Alerta AS a
+        LEFT JOIN PerfilMonitoreado AS p ON p.idPerfil = a.idPerfil
+        ORDER BY a.fechaHora DESC
+        """
+    )
+    fun observarTodas(): Flow<List<AlertaConPerfil>>
+}
+
+@Dao
+interface UbicacionDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertar(ubicacion: UbicacionEntity)
+
+    @Query(
+        """
+        SELECT
+            s.idPerfil AS idPerfil,
+            u.idUbicacion AS idUbicacion,
+            u.latitud AS latitud,
+            u.longitud AS longitud,
+            u.fechaHora AS fechaHora,
+            u.idSmartwatch AS idSmartwatch
+        FROM SmartWatch AS s
+        INNER JOIN Ubicacion AS u ON u.idSmartwatch = s.idSmartwatch
+        WHERE s.idPerfil IS NOT NULL
+          AND u.fechaHora = (
+              SELECT MAX(latest.fechaHora)
+              FROM Ubicacion AS latest
+              WHERE latest.idSmartwatch = u.idSmartwatch
+          )
+        """
+    )
+    fun observarUltimasPorPerfil(): Flow<List<LatestProfileLocation>>
 }

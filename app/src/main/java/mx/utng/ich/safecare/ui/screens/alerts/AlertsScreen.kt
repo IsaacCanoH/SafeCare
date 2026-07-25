@@ -17,7 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import mx.utng.ich.safecare.data.local.entity.AlertaEntity
+import mx.utng.ich.safecare.data.local.entity.AlertaConPerfil
 import mx.utng.ich.safecare.ui.viewmodel.AlertViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -56,7 +56,7 @@ fun AlertsScreen(viewModel: AlertViewModel) {
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
                 items(alerts) { alert ->
-                    AlertItem(alert = alert)
+                    AlertItem(item = alert)
                 }
             }
         }
@@ -64,17 +64,28 @@ fun AlertsScreen(viewModel: AlertViewModel) {
 }
 
 @Composable
-fun AlertItem(alert: AlertaEntity) {
+fun AlertItem(item: AlertaConPerfil) {
+    val alert = item.alerta
     val sdf = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
     val dateStr = sdf.format(Date(alert.fechaHora))
+    val isSos = alert.tipoAlerta == "SOS"
+    val isCustomAlert = alert.tipoAlerta == "ALERTA"
+    val accentColor = when {
+        isSos -> Color(0xFFC62828)
+        isCustomAlert -> MaterialTheme.colorScheme.primary
+        else -> Color(0xFFF9A825)
+    }
+    val containerColor = when {
+        isSos -> Color(0xFFFFEBEE)
+        isCustomAlert -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+        else -> Color(0xFFFFF8E1)
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (alert.tipoAlerta == "SOS") 
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            containerColor = containerColor
         )
     ) {
         Row(
@@ -86,14 +97,16 @@ fun AlertItem(alert: AlertaEntity) {
                     .size(40.dp)
                     .clip(CircleShape)
                     .background(
-                        if (alert.tipoAlerta == "SOS") MaterialTheme.colorScheme.error 
-                        else MaterialTheme.colorScheme.primary
+                        accentColor
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (alert.tipoAlerta == "SOS") Icons.Default.Warning 
-                                 else Icons.Default.Notifications, 
+                    imageVector = when {
+                        isSos -> Icons.Default.Warning
+                        isCustomAlert -> Icons.Default.Campaign
+                        else -> Icons.Default.LocationOff
+                    },
                     contentDescription = null, 
                     tint = Color.White
                 )
@@ -102,11 +115,36 @@ fun AlertItem(alert: AlertaEntity) {
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = alert.tipoAlerta, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(text = alert.descripcion, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = alertTitle(item),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+                Text(
+                    text = alertMessage(item),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             Text(text = dateStr, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
+
+fun alertMessage(item: AlertaConPerfil): String {
+    val name = item.nombrePerfil?.trim().takeUnless { it.isNullOrEmpty() }
+        ?: "Perfil sin nombre"
+    return when (item.alerta.tipoAlerta) {
+        "SOS" -> "$name activó una alerta SOS desde su reloj."
+        "ALERTA" -> item.alerta.descripcion
+        else -> "$name salió del perímetro de la zona segura."
+    }
+}
+
+fun alertTitle(item: AlertaConPerfil): String =
+    when (item.alerta.tipoAlerta) {
+        "SOS" -> "SOS"
+        "ALERTA" -> "Alerta personalizada"
+        else -> "Fuera de zona segura"
+    }

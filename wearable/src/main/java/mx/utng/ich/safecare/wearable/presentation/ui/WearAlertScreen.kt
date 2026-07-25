@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Message
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,19 +59,15 @@ import mx.utng.ich.safecare.wearable.presentation.theme.SafeCareTheme
 fun WearAlertScreen(
     message: String = "Saliste de zona segura",
     address: String = "Zona segura",
+    alertType: String = "FUERA_ZONA_SEGURA",
     onDismiss: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
-    val isSafeZoneExit = message == "Saliste de zona segura"
+    val isSafeZoneExit = alertType == "FUERA_ZONA_SEGURA"
     val titleText = if (isSafeZoneExit) {
         "Saliste de\nzona segura"
     } else {
-        message
-    }
-    val bodyText = if (isSafeZoneExit) {
-        "Hemos detectado que\nsaliste de la zona segura."
-    } else {
-        "Revisa la zona segura configurada."
+        "Alerta"
     }
 
     SafeCareTheme {
@@ -123,19 +120,23 @@ fun WearAlertScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Text(
-                        text = bodyText,
-                        color = onBackgroundLight,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontSize = 11.sp,
-                        lineHeight = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center
+                    if (isSafeZoneExit) {
+                        Text(
+                            text = "Hemos detectado que\nsaliste de la zona segura.",
+                            color = onBackgroundLight,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontSize = 11.sp,
+                            lineHeight = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
+                    AlertDetailPill(
+                        text = if (isSafeZoneExit) address else message,
+                        isCustomAlert = !isSafeZoneExit
                     )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    AddressPill(address = address)
 
                     Spacer(modifier = Modifier.height(14.dp))
 
@@ -198,7 +199,10 @@ private fun AlertShieldIcon(
 }
 
 @Composable
-private fun AddressPill(address: String) {
+private fun AlertDetailPill(
+    text: String,
+    isCustomAlert: Boolean
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -215,7 +219,11 @@ private fun AddressPill(address: String) {
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Default.LocationOn,
+                imageVector = if (isCustomAlert) {
+                    Icons.Default.Message
+                } else {
+                    Icons.Default.LocationOn
+                },
                 contentDescription = null,
                 tint = onPrimaryLight,
                 modifier = Modifier.size(18.dp)
@@ -225,7 +233,7 @@ private fun AddressPill(address: String) {
         Spacer(modifier = Modifier.width(8.dp))
 
         Text(
-            text = address,
+            text = text,
             color = onBackgroundLight,
             fontSize = 10.sp,
             lineHeight = 12.sp,

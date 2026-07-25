@@ -1,6 +1,7 @@
 package mx.utng.ich.safecare.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Embedded
 import androidx.room.PrimaryKey
 import java.util.UUID
 
@@ -34,6 +35,10 @@ data class SmartwatchEntity(
     @PrimaryKey
     val idSmartwatch: String = UUID.randomUUID().toString(),
     val numeroSerie: String,
+    val watchInstallationId: String? = null,
+    val nombreDispositivo: String? = null,
+    val modelo: String? = null,
+    val dataLayerNodeId: String? = null,
     val bateria: Int = 100,
     val conexion: String = "online",
     val ultimaConexion: Long = System.currentTimeMillis(),
@@ -52,6 +57,12 @@ data class AlertaEntity(
     val idUbicacion: String? = null
 )
 
+data class AlertaConPerfil(
+    @Embedded
+    val alerta: AlertaEntity,
+    val nombrePerfil: String?
+)
+
 @Entity(tableName = "Ubicacion")
 data class UbicacionEntity(
     @PrimaryKey
@@ -59,5 +70,14 @@ data class UbicacionEntity(
     val latitud: Double,
     val longitud: Double,
     val fechaHora: Long = System.currentTimeMillis(),
+    val idSmartwatch: String
+)
+
+data class LatestProfileLocation(
+    val idPerfil: String,
+    val idUbicacion: String,
+    val latitud: Double,
+    val longitud: Double,
+    val fechaHora: Long,
     val idSmartwatch: String
 )

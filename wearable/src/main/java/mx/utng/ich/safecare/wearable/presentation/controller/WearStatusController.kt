@@ -1,12 +1,13 @@
 package mx.utng.ich.safecare.wearable.presentation.controller
 
 import android.content.Context
-import android.os.Build
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import mx.utng.ich.safecare.wearable.data.local.SafeCareProfileResolver
+import mx.utng.ich.safecare.wearable.data.datalayer.WearIdentityStore
+import mx.utng.ich.safecare.wearable.data.datalayer.WearDataPublisher
 import mx.utng.ich.safecare.wearable.data.local.database.DatabaseProvider
 import mx.utng.ich.safecare.wearable.data.local.entity.AlertaEntity
 import mx.utng.ich.safecare.wearable.data.local.entity.SmartwatchEntity
@@ -15,6 +16,7 @@ import mx.utng.ich.safecare.wearable.presentation.location.LocationPermissionMan
 import mx.utng.ich.safecare.wearable.presentation.location.WearLocationReader
 import mx.utng.ich.safecare.wearable.presentation.sensors.DeviceStatusReader
 import mx.utng.ich.safecare.wearable.presentation.ui.WearHomeUiState
+import mx.utng.ich.safecare.wearable.data.repository.SupabaseRepository
 
 class WearStatusController(
     private val context: Context,
@@ -48,9 +50,14 @@ class WearStatusController(
 
         if (hasLocationPermission) {
             scope.launch {
-                val serialIdentificador = Build.MODEL 
+                val serialIdentificador = WearIdentityStore(context).getOrCreateWatchId()
                 val database = DatabaseProvider.getDatabase(context)
                 val idPerfil = SafeCareProfileResolver.resolveProfileId(database)
+                val profileName = database.perfilMonitoreadoDao()
+                    .obtenerPorId(idPerfil)
+                    ?.nombre
+                    ?.takeIf { it.isNotBlank() }
+                    ?: "El perfil monitoreado"
                 val locationData = wearLocationReader.getCurrentLocationData()
                 val alertaDao = database.alertaDao()
                 val ubicacionDao = database.ubicacionDao()
@@ -61,6 +68,7 @@ class WearStatusController(
                 val isOnline = deviceStatusReader.isOnline()
 
                 val smartwatchLocal = SmartwatchEntity(
+                    idSmartwatch = serialIdentificador,
                     numeroSerie = serialIdentificador,
                     bateria = batteryLevel,
                     conexion = if (isOnline) "online" else "offline",
@@ -77,16 +85,25 @@ class WearStatusController(
                         idSmartwatch = serialIdentificador
                     )
                     ubicacionDao.insertar(nuevaUbicacion)
+                    WearDataPublisher(context).publishLocation(nuevaUbicacion)
+                    if (isOnline) {
+                        SupabaseRepository().saveLocation(nuevaUbicacion)
+                    }
                     localUbicacionId = nuevaUbicacion.idUbicacion
                 }
 
                 val alertaLocal = AlertaEntity(
                     tipoAlerta = "SOS",
-                    descripcion = "SOS activado desde el SmartWatch",
+                    descripcion = "$profileName activó una alerta SOS desde su reloj",
                     idPerfil = idPerfil,
                     idUbicacion = localUbicacionId
                 )
                 alertaDao.insertar(alertaLocal)
+                WearDataPublisher(context).publishAlert(
+                    serialIdentificador,
+                    alertaLocal,
+                    locationData
+                )
                 
                 Log.i(TAG, "SOS guardado localmente en Room")
                 Log.i(TAG, "--- FLUJO SOS FINALIZADO ---")

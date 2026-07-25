@@ -29,8 +29,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "SUPABASE_URL", supabaseUrl)
-        buildConfigField("String", "SUPABASE_KEY", supabaseKey)
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"$supabaseKey\"")
     }
 
     buildTypes {
@@ -68,6 +68,7 @@ dependencies {
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.client.core)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.play.services.wearable)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

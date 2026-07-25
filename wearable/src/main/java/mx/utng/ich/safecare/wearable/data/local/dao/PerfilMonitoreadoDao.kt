@@ -17,6 +17,12 @@ interface PerfilMonitoreadoDao {
     @Query("SELECT * FROM PerfilMonitoreado WHERE estadoActual = 1 LIMIT 1")
     suspend fun obtenerPerfilActivo(): PerfilMonitoreadoEntity?
 
+    @Query("UPDATE PerfilMonitoreado SET estadoActual = 0")
+    suspend fun desactivarTodos()
+
+    @Query("DELETE FROM PerfilMonitoreado WHERE idPerfil = :idPerfil")
+    suspend fun eliminarPorId(idPerfil: String)
+
     @Query("DELETE FROM PerfilMonitoreado")
     suspend fun eliminarTodo()
 }

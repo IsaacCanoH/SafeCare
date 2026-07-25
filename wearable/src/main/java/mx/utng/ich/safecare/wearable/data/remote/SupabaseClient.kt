@@ -7,8 +7,8 @@ import io.github.jan.supabase.realtime.Realtime
 import mx.utng.ich.safecare.wearable.BuildConfig
 
 object SupabaseClient {
-    private const val SUPABASE_URL = BuildConfig.SUPABASE_URL
-    private const val SUPABASE_KEY = BuildConfig.SUPABASE_KEY
+    private val SUPABASE_URL = BuildConfig.SUPABASE_URL
+    private val SUPABASE_KEY = BuildConfig.SUPABASE_KEY
 
     val client = createSupabaseClient(
         supabaseUrl = SUPABASE_URL,

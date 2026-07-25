@@ -52,6 +52,18 @@
             android:foregroundServiceType="location"
             android:stopWithTask="false" />
 
+        <service
+            android:name=".data.datalayer.WearDataLayerService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.REQUEST_RECEIVED" />
+                <data
+                    android:scheme="wear"
+                    android:host="*"
+                    android:pathPrefix="/safecare" />
+            </intent-filter>
+        </service>
+
         <activity
             android:name=".presentation.MainActivity"
             android:exported="true"

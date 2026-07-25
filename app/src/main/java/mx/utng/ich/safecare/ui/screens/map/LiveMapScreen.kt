@@ -15,23 +15,33 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import mx.utng.ich.safecare.data.local.entity.PerfilMonitoreadoEntity
 import mx.utng.ich.safecare.ui.components.OsmMapView
 import mx.utng.ich.safecare.ui.components.addSafeZoneCircle
 import mx.utng.ich.safecare.ui.components.addSimpleMarker
 import mx.utng.ich.safecare.ui.viewmodel.ProfileViewModel
 import mx.utng.ich.safecare.ui.viewmodel.SafeZoneViewModel
+import mx.utng.ich.safecare.ui.viewmodel.LocationViewModel
+import mx.utng.ich.safecare.ui.viewmodel.AlertViewModel
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
 
 @Composable
 fun LiveMapScreen(
     profileViewModel: ProfileViewModel,
     zoneViewModel: SafeZoneViewModel,
+    locationViewModel: LocationViewModel,
+    alertViewModel: AlertViewModel,
     selectedProfileId: String? = null, // ID opcional para filtrado
     onBackClick: () -> Unit = {}
 ) {
     val profiles by profileViewModel.profiles.collectAsState()
     val zones by zoneViewModel.zones.collectAsState()
+    val latestLocations by locationViewModel.latestLocationsByProfile.collectAsState()
+    var mapView by remember { mutableStateOf<MapView?>(null) }
+    var showCustomAlertDialog by remember { mutableStateOf(false) }
+    var customAlertMessage by remember { mutableStateOf("") }
+    var isSendingAlert by remember { mutableStateOf(false) }
+    var alertFeedback by remember { mutableStateOf<String?>(null) }
     
     // Filtrar perfiles según si venimos de un perfil específico o de la barra global
     val displayedProfiles = if (selectedProfileId != null) {
@@ -42,28 +52,44 @@ fun LiveMapScreen(
 
     // Perfil para mostrar en la tarjeta inferior (el primero de la lista mostrada)
     val cardProfile = displayedProfiles.firstOrNull()
+    val cardLocation = cardProfile?.let { latestLocations[it.idPerfil] }
+    val mapCenter = cardLocation?.let { GeoPoint(it.latitud, it.longitud) }
+        ?: GeoPoint(21.1526, -100.9312)
+
+    LaunchedEffect(mapView, displayedProfiles, zones, latestLocations) {
+        mapView?.let { currentMap ->
+            currentMap.overlays.clear()
+
+            displayedProfiles.forEach { profile ->
+                latestLocations[profile.idPerfil]?.let { location ->
+                    currentMap.addSimpleMarker(
+                        GeoPoint(location.latitud, location.longitud),
+                        profile.nombre
+                    )
+                }
+            }
+
+            zones
+                .filter { zone ->
+                    zone.activa && displayedProfiles.any { it.idPerfil == zone.idPerfil }
+                }
+                .forEach { zone ->
+                    currentMap.addSafeZoneCircle(
+                        GeoPoint(zone.latitudCentro, zone.longitudCentro),
+                        zone.radioMetros,
+                        0x445A4699.toInt()
+                    )
+                }
+            currentMap.invalidate()
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Mapa
         OsmMapView(
             modifier = Modifier.fillMaxSize(),
-            center = GeoPoint(21.1526, -100.9312),
-            onMapReady = { mapView ->
-                mapView.overlays.clear()
-                
-                // 1. Mostrar marcadores de los perfiles filtrados
-                displayedProfiles.forEach { profile ->
-                    // En una app real, estas coordenadas vendrían de la tabla Ubicacion
-                    val point = GeoPoint(21.1526, -100.9312) 
-                    mapView.addSimpleMarker(point, profile.nombre)
-                }
-                
-                // 2. Mostrar todas las zonas seguras (Opción A: Familiares)
-                zones.filter { it.activa }.forEach { zone ->
-                    val point = GeoPoint(zone.latitudCentro, zone.longitudCentro)
-                    mapView.addSafeZoneCircle(point, zone.radioMetros, 0x445A4699.toInt())
-                }
-            }
+            center = mapCenter,
+            onMapReady = { readyMap -> mapView = readyMap }
         )
 
         // Barra Superior Local
@@ -122,6 +148,13 @@ fun LiveMapScreen(
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(text = "En línea", fontSize = 11.sp, color = Color(0xFF2E7D32))
                             }
+                            Text(
+                                text = cardLocation?.let {
+                                    "Actualizado ${formatElapsedTime(it.fechaHora)}"
+                                } ?: "Sin ubicación recibida",
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
 
                         // Info de batería/conexión (Simulada o del Smartwatch)
@@ -136,30 +169,108 @@ fun LiveMapScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth()) {
                         OutlinedButton(
-                            onClick = { /* Alerta manual */ },
-                            modifier = Modifier.weight(1f).height(44.dp),
+                            onClick = { showCustomAlertDialog = true },
+                            modifier = Modifier.fillMaxWidth().height(44.dp),
                             shape = RoundedCornerShape(10.dp)
                         ) {
                             Icon(Icons.Default.Campaign, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Alerta", fontSize = 12.sp)
                         }
-                        
-                        Button(
-                            onClick = { /* SOS */ },
-                            modifier = Modifier.weight(1f).height(44.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Icon(Icons.Default.Report, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("SOS", fontSize = 12.sp)
-                        }
                     }
                 }
             }
         }
+
+        if (showCustomAlertDialog && cardProfile != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    if (!isSendingAlert) showCustomAlertDialog = false
+                },
+                title = { Text("Enviar alerta a ${cardProfile.nombre}") },
+                text = {
+                    Column {
+                        Text("Escribe el mensaje que aparecerá en el reloj.")
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = customAlertMessage,
+                            onValueChange = {
+                                if (it.length <= MAX_CUSTOM_ALERT_LENGTH) {
+                                    customAlertMessage = it
+                                    alertFeedback = null
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("Mensaje") },
+                            supportingText = {
+                                Text("${customAlertMessage.length}/$MAX_CUSTOM_ALERT_LENGTH")
+                            },
+                            minLines = 3,
+                            maxLines = 5,
+                            enabled = !isSendingAlert
+                        )
+                        alertFeedback?.let { feedback ->
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                feedback,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showCustomAlertDialog = false },
+                        enabled = !isSendingAlert
+                    ) { Text("Cancelar") }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            isSendingAlert = true
+                            alertViewModel.sendCustomAlert(
+                                profileId = cardProfile.idPerfil,
+                                message = customAlertMessage
+                            ) { result ->
+                                isSendingAlert = false
+                                result.onSuccess {
+                                    customAlertMessage = ""
+                                    alertFeedback = null
+                                    showCustomAlertDialog = false
+                                }.onFailure { error ->
+                                    alertFeedback = error.message ?: "No se pudo enviar la alerta"
+                                }
+                            }
+                        },
+                        enabled = customAlertMessage.isNotBlank() && !isSendingAlert
+                    ) {
+                        if (isSendingAlert) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Enviar")
+                        }
+                    }
+                }
+            )
+        }
+    }
+}
+
+private const val MAX_CUSTOM_ALERT_LENGTH = 160
+
+private fun formatElapsedTime(timestamp: Long): String {
+    val elapsedSeconds =
+        ((System.currentTimeMillis() - timestamp) / 1_000).coerceAtLeast(0)
+    return when {
+        elapsedSeconds < 10 -> "ahora"
+        elapsedSeconds < 60 -> "hace ${elapsedSeconds}s"
+        elapsedSeconds < 3_600 -> "hace ${elapsedSeconds / 60} min"
+        else -> "hace ${elapsedSeconds / 3_600} h"
     }
 }

@@ -21,14 +21,15 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "mx.utng.ich.safecare.wearable"
+        // Data Layer exige el mismo applicationId y certificado en móvil y reloj.
+        applicationId = "mx.utng.ich.safecare"
         minSdk = 30
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
-        buildConfigField("String", "SUPABASE_URL", supabaseUrl)
-        buildConfigField("String", "SUPABASE_KEY", supabaseKey)
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"$supabaseKey\"")
     }
 
     buildTypes {

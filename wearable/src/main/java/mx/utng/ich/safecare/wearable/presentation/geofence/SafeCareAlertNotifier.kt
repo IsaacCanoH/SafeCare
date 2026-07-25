@@ -58,6 +58,24 @@ object SafeCareAlertNotifier {
         )
     }
 
+    fun showCustomAlertNotification(
+        context: Context,
+        message: String
+    ): Boolean {
+        return showNotification(
+            context = context,
+            notificationId = SAFE_ZONE_EXIT_NOTIFICATION_ID,
+            requestCode = SAFE_ZONE_EXIT_REQUEST_CODE,
+            title = "Alerta de SafeCare",
+            text = message,
+            alertMessage = message,
+            alertAddress = message,
+            alertLocation = null,
+            fullScreen = true,
+            alertType = "ALERTA"
+        )
+    }
+
     fun dismissSafeZoneExitNotification(context: Context) {
         val notificationManager =
             context.applicationContext.getSystemService(NotificationManager::class.java)
@@ -73,7 +91,8 @@ object SafeCareAlertNotifier {
         alertMessage: String,
         alertAddress: String,
         alertLocation: Location?,
-        fullScreen: Boolean
+        fullScreen: Boolean,
+        alertType: String = "FUERA_ZONA_SEGURA"
     ): Boolean {
         val appContext = context.applicationContext
 
@@ -89,6 +108,7 @@ object SafeCareAlertNotifier {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("EXTRA_MESSAGE", alertMessage)
             putExtra("EXTRA_ADDRESS", alertAddress)
+            putExtra("EXTRA_ALERT_TYPE", alertType)
             alertLocation?.let { location ->
                 putExtra("EXTRA_LATITUDE", location.latitude)
                 putExtra("EXTRA_LONGITUDE", location.longitude)

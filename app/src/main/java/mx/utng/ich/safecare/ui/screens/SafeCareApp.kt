@@ -1,15 +1,12 @@
 package mx.utng.ich.safecare.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -39,8 +36,7 @@ import mx.utng.ich.safecare.ui.viewmodel.AuthViewModel
 import mx.utng.ich.safecare.ui.viewmodel.SafeZoneViewModel
 import mx.utng.ich.safecare.ui.viewmodel.ProfileViewModel
 import mx.utng.ich.safecare.ui.viewmodel.AlertViewModel
-import java.text.SimpleDateFormat
-import java.util.*
+import mx.utng.ich.safecare.ui.viewmodel.LocationViewModel
 
 enum class Screen {
     LOGIN, REGISTER, MAIN
@@ -57,14 +53,32 @@ fun SafeCareApp() {
     }
     
     val profileViewModel: ProfileViewModel = viewModel {
-        ProfileViewModel(perfilDao = database.perfilMonitoreadoDao())
+        ProfileViewModel(
+            perfilDao = database.perfilMonitoreadoDao(),
+            smartwatchDao = database.smartwatchDao(),
+            context = context.applicationContext
+        )
     }
     
     val zoneViewModel: SafeZoneViewModel = viewModel {
-        SafeZoneViewModel(zonaSeguraDao = database.zonaSeguraDao())
+        SafeZoneViewModel(
+            zonaSeguraDao = database.zonaSeguraDao(),
+            smartwatchDao = database.smartwatchDao(),
+            context = context.applicationContext
+        )
     }
     
-    val alertViewModel: AlertViewModel = viewModel()
+    val alertViewModel: AlertViewModel = viewModel {
+        AlertViewModel(
+            alertaDao = database.alertaDao(),
+            smartwatchDao = database.smartwatchDao(),
+            context = context.applicationContext
+        )
+    }
+
+    val locationViewModel: LocationViewModel = viewModel {
+        LocationViewModel(ubicacionDao = database.ubicacionDao())
+    }
     
     var currentRootScreen by remember { mutableStateOf(Screen.LOGIN) }
     var bottomNavTab by remember { mutableStateOf("Inicio") }
@@ -72,11 +86,10 @@ fun SafeCareApp() {
     var selectedProfileForEdit by remember { mutableStateOf<PerfilMonitoreadoEntity?>(null) }
     var selectedZoneForEdit by remember { mutableStateOf<ZonaSeguraEntity?>(null) }
     
-    var showNotificationModal by remember { mutableStateOf(false) }
-
     val authState by authViewModel.authState
     val profiles by profileViewModel.profiles.collectAsState()
     val allZones by zoneViewModel.zones.collectAsState() // Obtenemos todas las zonas
+    val alerts by alertViewModel.alerts.collectAsState()
 
     LaunchedEffect(authState) {
         if (authState is AuthState.Success) {
@@ -119,18 +132,6 @@ fun SafeCareApp() {
                                     IconButton(onClick = { /* Drawer */ }) {
                                         Icon(Icons.Default.Menu, contentDescription = null)
                                     }
-                                },
-                                actions = {
-                                    IconButton(onClick = { showNotificationModal = true }) {
-                                        val alerts by alertViewModel.alerts.collectAsState()
-                                        if (alerts.isNotEmpty()) {
-                                            BadgedBox(badge = { Badge { Text(alerts.size.toString()) } }) {
-                                                Icon(Icons.Default.Notifications, contentDescription = null)
-                                            }
-                                        } else {
-                                            Icon(Icons.Default.Notifications, contentDescription = null)
-                                        }
-                                    }
                                 }
                             )
                         }
@@ -161,7 +162,25 @@ fun SafeCareApp() {
                             NavigationBarItem(
                                 selected = bottomNavTab == "Alertas",
                                 onClick = { bottomNavTab = "Alertas" },
-                                icon = { Icon(Icons.Default.Notifications, contentDescription = null) },
+                                icon = {
+                                    BadgedBox(
+                                        badge = {
+                                            if (alerts.isNotEmpty()) {
+                                                Badge(containerColor = Color(0xFFD32F2F)) {
+                                                    Text(
+                                                        text = if (alerts.size > 99) "99+" else alerts.size.toString(),
+                                                        color = Color.White
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Notifications,
+                                            contentDescription = "Alertas"
+                                        )
+                                    }
+                                },
                                 label = { Text("Alertas") }
                             )
                             NavigationBarItem(
@@ -200,6 +219,8 @@ fun SafeCareApp() {
                             "Mapa" -> LiveMapScreen(
                                 profileViewModel = profileViewModel,
                                 zoneViewModel = zoneViewModel,
+                                locationViewModel = locationViewModel,
+                                alertViewModel = alertViewModel,
                                 selectedProfileId = selectedProfileIdForMap,
                                 onBackClick = { 
                                     selectedProfileIdForMap = null
@@ -253,8 +274,7 @@ fun SafeCareApp() {
                             )
                             "CrearZona" -> CreateSafeZoneScreen(
                                 viewModel = zoneViewModel,
-                                // Pasamos el ID del Cuidador (usuario logueado) en lugar de un perfil individual
-                                idPerfil = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: "",
+                                profiles = profiles,
                                 onBackClick = { bottomNavTab = "Zonas" },
                                 onSaveSuccess = { 
                                     bottomNavTab = "Zonas" 
@@ -263,65 +283,7 @@ fun SafeCareApp() {
                         }
                     }
                 }
-                
-                if (showNotificationModal) {
-                    NotificationModal(
-                        viewModel = alertViewModel,
-                        onDismiss = { showNotificationModal = false }
-                    )
-                }
             }
-        }
-    }
-}
-
-@Composable
-fun NotificationModal(viewModel: AlertViewModel, onDismiss: () -> Unit) {
-    val alerts by viewModel.alerts.collectAsState()
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Cerrar") }
-        },
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.width(8.dp))
-                Text("Notificaciones recientes")
-            }
-        },
-        text = {
-            if (alerts.isEmpty()) {
-                Text("No tienes notificaciones pendientes.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            } else {
-                val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    alerts.take(5).forEach { alert ->
-                        val timeStr = sdf.format(Date(alert.fechaHora))
-                        NotificationItem(
-                            text = "${alert.tipoAlerta}: ${alert.descripcion}", 
-                            time = "Hoy, $timeStr", 
-                            color = if (alert.tipoAlerta == "SOS") Color(0xFFD32F2F) else Color(0xFFFF9800)
-                        )
-                    }
-                }
-            }
-        }
-    )
-}
-
-@Composable
-fun NotificationItem(text: String, time: String, color: Color) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
-        Spacer(Modifier.width(12.dp))
-        Column {
-            Text(text, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-            Text(time, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

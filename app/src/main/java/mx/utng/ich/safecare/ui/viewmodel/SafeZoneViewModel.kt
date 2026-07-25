@@ -1,15 +1,18 @@
 package mx.utng.ich.safecare.ui.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import mx.utng.ich.safecare.data.local.dao.ZonaSeguraDao
+import mx.utng.ich.safecare.data.local.dao.SmartwatchDao
 import mx.utng.ich.safecare.data.local.entity.ZonaSeguraEntity
 import mx.utng.ich.safecare.data.remote.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import mx.utng.ich.safecare.data.repository.SupabaseRepository
+import mx.utng.ich.safecare.data.datalayer.WearDataLayerRepository
 import org.osmdroid.util.GeoPoint
 import java.net.URL
 import org.json.JSONArray
@@ -22,8 +25,11 @@ import kotlinx.coroutines.delay
 
 class SafeZoneViewModel(
     private val zonaSeguraDao: ZonaSeguraDao,
+    private val smartwatchDao: SmartwatchDao,
+    context: Context,
     private val repository: SupabaseRepository = SupabaseRepository()
 ) : ViewModel() {
+    private val wearRepository = WearDataLayerRepository(context)
     private val _zones = MutableStateFlow<List<ZonaSeguraEntity>>(emptyList())
     val zones: StateFlow<List<ZonaSeguraEntity>> = _zones
 
@@ -121,6 +127,7 @@ class SafeZoneViewModel(
                         idPerfil = idPerfil
                     )
                     zonaSeguraDao.insertar(entity)
+                    syncZonesWithLinkedWatch(idPerfil)
                     loadZones()
                     onComplete(true)
                 } else {
@@ -150,6 +157,7 @@ class SafeZoneViewModel(
                         idPerfil = idPerfil
                     )
                     zonaSeguraDao.insertar(entity)
+                    syncZonesWithLinkedWatch(idPerfil)
                     loadZones()
                     onComplete(true)
                 } else {
@@ -178,7 +186,19 @@ class SafeZoneViewModel(
                 zonaSeguraDao.insertar(zone)
                 loadZones()
                 Log.e("SafeZoneVM", "Failed to toggle status in Supabase")
+            } else {
+                syncZonesWithLinkedWatch(zone.idPerfil)
             }
         }
+    }
+
+    private suspend fun syncZonesWithLinkedWatch(profileId: String) {
+        val watch = smartwatchDao.obtenerPorPerfil(profileId) ?: return
+        val nodeId = watch.dataLayerNodeId ?: return
+        val profileZones = zonaSeguraDao.obtenerPorPerfil(profileId)
+        wearRepository.syncZones(nodeId, profileId, profileZones)
+            .onFailure { exception ->
+                Log.w("SafeZoneVM", "Zone sync deferred for profile=$profileId", exception)
+            }
     }
 }

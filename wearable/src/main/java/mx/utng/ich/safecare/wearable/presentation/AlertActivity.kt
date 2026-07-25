@@ -32,8 +32,9 @@ class AlertActivity : ComponentActivity() {
         showAsPersistentFullScreenAlert()
         startEmergencyVibration()
 
-        val message = intent.getStringExtra("EXTRA_MESSAGE") ?: "Saliste de zona segura"
-        displayAddress = intent.getStringExtra("EXTRA_ADDRESS") ?: "Ubicacion desconocida"
+        val message = intent.getStringExtra(EXTRA_MESSAGE) ?: "Saliste de zona segura"
+        val alertType = intent.getStringExtra(EXTRA_ALERT_TYPE) ?: "FUERA_ZONA_SEGURA"
+        displayAddress = intent.getStringExtra(EXTRA_ADDRESS) ?: "Ubicacion desconocida"
         val latitude = intent.getDoubleExtra("EXTRA_LATITUDE", Double.NaN)
         val longitude = intent.getDoubleExtra("EXTRA_LONGITUDE", Double.NaN)
 
@@ -41,6 +42,7 @@ class AlertActivity : ComponentActivity() {
             WearAlertScreen(
                 message = message,
                 address = displayAddress,
+                alertType = alertType,
                 onDismiss = {
                     dismissAlert()
                 }
@@ -157,5 +159,11 @@ class AlertActivity : ComponentActivity() {
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         // No hacer nada para evitar el cierre accidental.
+    }
+
+    companion object {
+        const val EXTRA_ALERT_TYPE = "EXTRA_ALERT_TYPE"
+        const val EXTRA_MESSAGE = "EXTRA_MESSAGE"
+        const val EXTRA_ADDRESS = "EXTRA_ADDRESS"
     }
 }
