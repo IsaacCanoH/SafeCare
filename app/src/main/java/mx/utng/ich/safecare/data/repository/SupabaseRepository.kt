@@ -7,6 +7,8 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import mx.utng.ich.safecare.data.remote.SupabaseClient
 import mx.utng.ich.safecare.data.local.entity.UsuarioEntity
+import mx.utng.ich.safecare.data.local.entity.UbicacionEntity
+import mx.utng.ich.safecare.data.local.entity.AlertaEntity
 import android.util.Log
 import java.util.UUID
 import java.util.Locale
@@ -16,10 +18,50 @@ class SupabaseRepository {
 
     private val client = SupabaseClient.client
 
+    suspend fun saveLocation(location: UbicacionEntity): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val locationData = buildJsonObject {
+                put("idUbicacion", location.idUbicacion)
+                put("latitud", location.latitud)
+                put("longitud", location.longitud)
+                put("fechaHora", location.fechaHora)
+                put("idSmartwatch", location.idSmartwatch)
+            }
+            client.postgrest["Ubicacion"].upsert(locationData) {
+                onConflict = "idUbicacion"
+            }
+            true
+        } catch (e: Exception) {
+            Log.e("SupabaseRepo", "Error syncing location ${location.idUbicacion}", e)
+            false
+        }
+    }
+
+    suspend fun saveAlert(alert: AlertaEntity): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val alertData = buildJsonObject {
+                put("idAlerta", alert.idAlerta)
+                put("tipoAlerta", alert.tipoAlerta)
+                put("descripcion", alert.descripcion)
+                put("fechaHora", alert.fechaHora)
+                put("estado", alert.estado)
+                put("idPerfil", alert.idPerfil)
+                alert.idUbicacion?.let { put("idUbicacion", it) }
+            }
+            client.postgrest["Alerta"].upsert(alertData) {
+                onConflict = "idAlerta"
+            }
+            true
+        } catch (e: Exception) {
+            Log.e("SupabaseRepo", "Error syncing alert ${alert.idAlerta}", e)
+            false
+        }
+    }
+
     suspend fun saveUser(usuario: UsuarioEntity): Boolean = withContext(Dispatchers.IO) {
         try {
             val userJson = buildJsonObject {
-                put("id_usuario", usuario.idUsuario)
+                put("idUsuario", usuario.idUsuario)
                 put("nombre", usuario.nombre)
                 put("correo", usuario.correo)
                 put("contrasena", usuario.contrasena)
@@ -27,7 +69,7 @@ class SupabaseRepository {
                 put("estado", usuario.estado)
             }
             
-            client.postgrest["usuario"].insert(userJson)
+            client.postgrest["Usuario"].insert(userJson)
             true
         } catch (e: Exception) {
             Log.e("SupabaseRepo", "Error saving user: ${e.message}")
@@ -40,7 +82,8 @@ class SupabaseRepository {
         edad: Int, 
         tipo: String, 
         idCuidador: String,
-        numeroSerie: String? = null
+        numeroSerie: String? = null,
+        fechaNacimiento: String? = null
     ): String? = withContext(Dispatchers.IO) {
         try {
             // Mapeamos el tipo amigable al valor EXACTO de tu imagen
@@ -53,25 +96,26 @@ class SupabaseRepository {
 
             val idPerfil = UUID.randomUUID().toString()
             val profileJson = buildJsonObject {
-                put("id_perfil", idPerfil)
+                put("idPerfil", idPerfil)
                 put("nombre", nombre)
                 put("edad", edad)
-                put("tipo_perfil", tipoMapeado)
-                put("id_cuidador", idCuidador)
-                put("estado_actual", true)
+                formatBirthDate(fechaNacimiento)?.let { put("fechaNacimiento", it) }
+                put("tipoPerfil", tipoMapeado)
+                put("idCuidador", idCuidador)
+                put("estadoActual", true)
             }
-            client.postgrest["perfil_monitoreado"].insert(profileJson)
+            client.postgrest["PerfilMonitoreado"].insert(profileJson)
             Log.d("SupabaseRepo", "Profile inserted successfully in Supabase: $idPerfil with type $tipoMapeado")
             
             // Si tiene smartwatch, lo vinculamos
             numeroSerie?.let {
                 val watchJson = buildJsonObject {
-                    put("numero_serie", it)
-                    put("id_perfil", idPerfil)
+                    put("numeroSerie", it)
+                    put("idPerfil", idPerfil)
                     put("bateria", 100)
                     put("conexion", "online")
                 }
-                client.postgrest["smartwatch"].insert(watchJson)
+                client.postgrest["SmartWatch"].insert(watchJson)
                 Log.d("SupabaseRepo", "Smartwatch linked successfully: $it")
             }
             
@@ -91,29 +135,19 @@ class SupabaseRepository {
         try {
             Log.d("SupabaseRepo", "Attempting update for ID: $idPerfil with name: $nombre")
             
-            // Formatear fecha para Supabase (yyyy-MM-dd) si viene en (dd/MM/yyyy)
-            val fechaFormateada = if (!fechaNacimiento.isNullOrBlank()) {
-                try {
-                    val inputFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                    val outputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                    val date = inputFormat.parse(fechaNacimiento)
-                    if (date != null) outputFormat.format(date) else null
-                } catch (e: Exception) {
-                    null
-                }
-            } else null
+            val fechaFormateada = formatBirthDate(fechaNacimiento)
 
             val updateData = buildJsonObject {
                 put("nombre", nombre)
                 put("edad", edad)
                 // Solo enviamos la fecha si es válida, de lo contrario no la incluimos 
                 // para evitar el error de sintaxis en Supabase
-                fechaFormateada?.let { put("fecha_nacimiento", it) }
+                fechaFormateada?.let { put("fechaNacimiento", it) }
             }
 
-            client.postgrest["perfil_monitoreado"].update(updateData) {
+            client.postgrest["PerfilMonitoreado"].update(updateData) {
                 filter {
-                    eq("id_perfil", idPerfil)
+                    eq("idPerfil", idPerfil)
                 }
             }
             Log.d("SupabaseRepo", "Supabase update request sent successfully")
@@ -128,14 +162,14 @@ class SupabaseRepository {
         try {
             // Primero intentamos borrar el smartwatch vinculado si existe (dependiendo de tus FK)
             try {
-                client.postgrest["smartwatch"].delete {
-                    filter { eq("id_perfil", idPerfil) }
+                client.postgrest["SmartWatch"].delete {
+                    filter { eq("idPerfil", idPerfil) }
                 }
             } catch (e: Exception) { /* Ignorable si no hay reloj */ }
 
-            client.postgrest["perfil_monitoreado"].delete {
+            client.postgrest["PerfilMonitoreado"].delete {
                 filter {
-                    eq("id_perfil", idPerfil)
+                    eq("idPerfil", idPerfil)
                 }
             }
             true
@@ -155,13 +189,13 @@ class SupabaseRepository {
         try {
             val zoneJson = buildJsonObject {
                 put("nombre", nombre)
-                put("latitud_centro", lat)
-                put("longitud_centro", lng)
-                put("radio_metros", radio)
-                put("id_perfil", idPerfil)
+                put("latitudCentro", lat)
+                put("longitudCentro", lng)
+                put("radioMetros", radio)
+                put("idPerfil", idPerfil)
                 put("activa", true)
             }
-            client.postgrest["zona_segura"].insert(zoneJson)
+            client.postgrest["ZonaSegura"].insert(zoneJson)
             true
         } catch (e: Exception) {
             Log.e("SupabaseRepo", "Error creating zone: ${e.message}")
@@ -180,14 +214,14 @@ class SupabaseRepository {
         try {
             val zoneJson = buildJsonObject {
                 put("nombre", nombre)
-                put("latitud_centro", lat)
-                put("longitud_centro", lng)
-                put("radio_metros", radio)
+                put("latitudCentro", lat)
+                put("longitudCentro", lng)
+                put("radioMetros", radio)
                 activa?.let { put("activa", it) }
             }
-            client.postgrest["zona_segura"].update(zoneJson) {
+            client.postgrest["ZonaSegura"].update(zoneJson) {
                 filter {
-                    eq("id_zona", idZona)
+                    eq("idZona", idZona)
                 }
             }
             true
@@ -202,15 +236,32 @@ class SupabaseRepository {
             val updateData = buildJsonObject {
                 put("activa", activa)
             }
-            client.postgrest["zona_segura"].update(updateData) {
+            client.postgrest["ZonaSegura"].update(updateData) {
                 filter {
-                    eq("id_zona", idZona)
+                    eq("idZona", idZona)
                 }
             }
             true
         } catch (e: Exception) {
             Log.e("SupabaseRepo", "Error toggling zone: ${e.message}")
             false
+        }
+    }
+
+    private fun formatBirthDate(value: String?): String? {
+        if (value.isNullOrBlank()) return null
+
+        val outputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).apply {
+            isLenient = false
+        }
+        val supportedFormats = listOf("dd/MM/yyyy", "yyyy-MM-dd")
+
+        return supportedFormats.firstNotNullOfOrNull { pattern ->
+            runCatching {
+                SimpleDateFormat(pattern, Locale.ROOT).apply {
+                    isLenient = false
+                }.parse(value)?.let(outputFormat::format)
+            }.getOrNull()
         }
     }
 }

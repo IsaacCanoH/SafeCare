@@ -70,6 +70,9 @@ interface UbicacionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertar(ubicacion: UbicacionEntity)
 
+    @Query("SELECT * FROM Ubicacion ORDER BY fechaHora DESC LIMIT :limit")
+    suspend fun obtenerRecientes(limit: Int = 100): List<UbicacionEntity>
+
     @Query(
         """
         SELECT
@@ -80,7 +83,9 @@ interface UbicacionDao {
             u.fechaHora AS fechaHora,
             u.idSmartwatch AS idSmartwatch
         FROM SmartWatch AS s
-        INNER JOIN Ubicacion AS u ON u.idSmartwatch = s.idSmartwatch
+        INNER JOIN Ubicacion AS u
+            ON u.idSmartwatch = s.idSmartwatch
+            OR u.idSmartwatch = s.watchInstallationId
         WHERE s.idPerfil IS NOT NULL
           AND u.fechaHora = (
               SELECT MAX(latest.fechaHora)
