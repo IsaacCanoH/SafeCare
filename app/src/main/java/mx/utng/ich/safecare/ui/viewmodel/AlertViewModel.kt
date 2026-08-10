@@ -1,65 +1,88 @@
 package mx.utng.ich.safecare.ui.viewmodel
 
+import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import android.content.Context
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import mx.utng.ich.safecare.data.local.dao.AlertaDao
-import mx.utng.ich.safecare.data.local.dao.SmartwatchDao
+import mx.utng.ich.safecare.data.datalayer.WearDataLayerRepository
 import mx.utng.ich.safecare.data.local.entity.AlertaConPerfil
 import mx.utng.ich.safecare.data.local.entity.AlertaEntity
-import mx.utng.ich.safecare.data.datalayer.WearDataLayerRepository
+import mx.utng.ich.safecare.data.remote.SupabaseClient
+import mx.utng.ich.safecare.data.repository.SupabaseRepository
 
 class AlertViewModel(
-    private val alertaDao: AlertaDao,
-    private val smartwatchDao: SmartwatchDao,
-    context: Context
+    context: Context,
+    private val repository: SupabaseRepository = SupabaseRepository()
 ) : ViewModel() {
-    private val wearDataLayerRepository = WearDataLayerRepository(context.applicationContext)
+    private val wearRepository = WearDataLayerRepository(context.applicationContext)
     private val _alerts = MutableStateFlow<List<AlertaConPerfil>>(emptyList())
     val alerts: StateFlow<List<AlertaConPerfil>> = _alerts
-
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
+    private var realtimeJob: Job? = null
 
-    init {
-        viewModelScope.launch {
-            alertaDao.observarTodas().collectLatest { storedAlerts ->
-                _alerts.value = storedAlerts
-            }
+    fun refreshAlerts(): Job? {
+        val caregiverId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: return null
+        return viewModelScope.launch {
+            _isLoading.value = true
+            runCatching {
+                val profiles = repository.fetchProfilesForCaregiver(caregiverId).associateBy { it.idPerfil }
+                repository.fetchAlertsForCaregiver(caregiverId).map { AlertaConPerfil(it, profiles[it.idPerfil]?.nombre) }
+            }.onSuccess { _alerts.value = it }
+            _isLoading.value = false
         }
     }
 
-    fun sendCustomAlert(
-        profileId: String,
-        message: String,
-        onResult: (Result<Unit>) -> Unit
-    ) {
-        val cleanMessage = message.trim()
-        if (cleanMessage.isEmpty()) {
-            onResult(Result.failure(IllegalArgumentException("Escribe un mensaje para la alerta")))
-            return
+    fun startRealtimeUpdates() {
+        if (realtimeJob != null) return
+        val caregiverId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: return
+        val channel = SupabaseClient.client.channel("mobile-alerts-$caregiverId")
+        realtimeJob = viewModelScope.launch {
+            runCatching {
+                channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+                    table = "Alerta"
+                }.collectLatest {
+                    refreshAlerts()?.join()
+                }
+            }.onFailure { exception ->
+                Log.e(TAG, "Realtime alerts", exception)
+            }
         }
+        viewModelScope.launch {
+            runCatching { channel.subscribe(blockUntilSubscribed = true) }
+                .onFailure { exception -> Log.e(TAG, "Realtime alerts subscribe", exception) }
+        }
+    }
 
+    fun sendCustomAlert(profileId: String, message: String, onResult: (Result<Unit>) -> Unit) {
+        val cleanMessage = message.trim()
+        if (cleanMessage.isEmpty()) return onResult(Result.failure(IllegalArgumentException("Escribe un mensaje para la alerta")))
         viewModelScope.launch {
             val result = runCatching {
-                val smartwatch = smartwatchDao.obtenerPorPerfil(profileId)
-                    ?: error("Este perfil no tiene un reloj vinculado")
-                val nodeId = smartwatch.dataLayerNodeId
-                    ?.takeIf { it.isNotBlank() }
-                    ?: error("El reloj no está disponible mediante Data Layer")
-                val alert = AlertaEntity(
-                    tipoAlerta = "ALERTA",
-                    descripcion = cleanMessage,
-                    idPerfil = profileId
-                )
-                wearDataLayerRepository.sendCustomAlert(nodeId, alert).getOrThrow()
-                alertaDao.insertar(alert)
+                val alert = AlertaEntity(tipoAlerta = "ALERTA", descripcion = cleanMessage, idPerfil = profileId)
+                check(repository.saveAlert(alert)) { "No se pudo guardar la alerta en Supabase" }
+                val serial = repository.fetchWatchSerial(profileId)
+                    ?: error("Este perfil no tiene reloj vinculado")
+                val watch = wearRepository.discoverAvailableWatches()
+                    .firstOrNull { it.watchInstallationId == serial }
+                    ?: error("El reloj no está disponible")
+                wearRepository.sendCustomAlert(watch.nodeId, alert).getOrThrow()
+                refreshAlerts()
+                Unit
             }
             onResult(result)
         }
+    }
+    private companion object {
+        const val TAG = "AlertViewModel"
     }
 }

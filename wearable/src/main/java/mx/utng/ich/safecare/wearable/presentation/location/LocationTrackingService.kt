@@ -19,6 +19,7 @@ import android.os.Bundle
 import android.os.IBinder
 import android.os.SystemClock
 import android.util.Log
+import androidx.room.withTransaction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -28,13 +29,14 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mx.utng.ich.safecare.wearable.R
 import mx.utng.ich.safecare.wearable.data.datalayer.WearIdentityStore
-import mx.utng.ich.safecare.wearable.data.datalayer.WearDataPublisher
 import mx.utng.ich.safecare.wearable.data.local.SafeCareProfileResolver
 import mx.utng.ich.safecare.wearable.data.local.database.DatabaseProvider
 import mx.utng.ich.safecare.wearable.data.local.entity.SmartwatchEntity
 import mx.utng.ich.safecare.wearable.data.local.entity.UbicacionEntity
 import mx.utng.ich.safecare.wearable.presentation.MainActivity
 import mx.utng.ich.safecare.wearable.presentation.geofence.SafeZoneMonitor
+import mx.utng.ich.safecare.wearable.presentation.geofence.GeofenceManager
+import mx.utng.ich.safecare.wearable.presentation.geofence.SafeZoneGeofence
 import mx.utng.ich.safecare.wearable.presentation.sensors.DeviceStatusReader
 import mx.utng.ich.safecare.wearable.data.repository.SupabaseRepository
 
@@ -48,6 +50,7 @@ class LocationTrackingService : Service() {
     private val supabaseRepository = SupabaseRepository()
     private var isTrackingStarted = false
     private var isStatusMonitoringStarted = false
+    private var lastConfigurationSyncMillis = 0L
 
     private val locationListener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
@@ -88,6 +91,7 @@ class LocationTrackingService : Service() {
         startAsForegroundService()
         startLocationUpdates()
         startStatusMonitoring()
+        serviceScope.launch { synchronizeRemoteConfigurationIfDue(force = true) }
         return START_STICKY
     }
 
@@ -154,7 +158,6 @@ class LocationTrackingService : Service() {
                 idSmartwatch = WearIdentityStore(applicationContext).getOrCreateWatchId()
             )
             val insertedId = ubicacionDao.insertar(locationEntity)
-            WearDataPublisher(applicationContext).publishLocation(locationEntity)
             safeZoneMonitor.evaluate(location)
 
             if (deviceStatusReader.isOnline()) {
@@ -210,10 +213,58 @@ class LocationTrackingService : Service() {
                 idPerfil = idPerfil
             )
         val smartwatchId = smartwatchDao.insertarOActualizar(status)
-        WearDataPublisher(applicationContext).publishStatus(status)
+        if (isOnline) {
+            supabaseRepository.updateSmartWatchStatus(
+                numeroSerie = serialNumber,
+                bateria = battery,
+                conexion = connection
+            )
+        }
 
         smartwatchDao.conservarSoloRegistrosRecientes(MAX_SMARTWATCH_RECORDS)
+        synchronizeRemoteConfigurationIfDue()
         Log.d(TAG, "Estado wearable guardado en smartwatch id=$smartwatchId")
+    }
+
+    private suspend fun synchronizeRemoteConfigurationIfDue(force: Boolean = false) {
+        val now = System.currentTimeMillis()
+        if (!force && now - lastConfigurationSyncMillis < CONFIGURATION_SYNC_INTERVAL_MILLIS) {
+            return
+        }
+        lastConfigurationSyncMillis = now
+
+        val watchId = WearIdentityStore(applicationContext).getOrCreateWatchId()
+        val configuration = supabaseRepository.fetchLinkedConfiguration(watchId) ?: return
+        val database = DatabaseProvider.getDatabase(applicationContext)
+
+        database.withTransaction {
+            database.perfilMonitoreadoDao().desactivarTodos()
+            database.perfilMonitoreadoDao().insertar(
+                configuration.profile.copy(estadoActual = true)
+            )
+            database.zonaSeguraDao().eliminarPorPerfil(configuration.profile.idPerfil)
+            if (configuration.zones.isNotEmpty()) {
+                database.zonaSeguraDao().insertarZonas(configuration.zones)
+            }
+        }
+
+        safeZoneMonitor.reset(configuration.profile.idPerfil)
+        GeofenceManager(applicationContext).replaceGeofences(
+            configuration.zones
+                .filter { it.activa }
+                .map { zone ->
+                    SafeZoneGeofence(
+                        id = zone.idZona,
+                        lat = zone.latitudCentro,
+                        lng = zone.longitudCentro,
+                        radiusInMeters = zone.radioMetros.toFloat()
+                    )
+                }
+        ).onSuccess { count ->
+            Log.i(TAG, "ConfiguraciÃ³n remota sincronizada: $count zonas")
+        }.onFailure { exception ->
+            Log.w(TAG, "No se pudieron registrar las zonas remotas", exception)
+        }
     }
 
     private fun startAsForegroundService() {
@@ -284,6 +335,7 @@ class LocationTrackingService : Service() {
         private const val MAX_LOCATION_RECORDS = 5_000
         private const val STATUS_CHECK_INTERVAL_MILLIS = 5_000L
         private const val STATUS_HEARTBEAT_INTERVAL_MILLIS = 60_000L
+        private const val CONFIGURATION_SYNC_INTERVAL_MILLIS = 60_000L
         private const val MAX_SMARTWATCH_RECORDS = 10_000
 
         fun start(context: Context) {

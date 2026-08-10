@@ -17,7 +17,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import mx.utng.ich.safecare.wearable.data.local.SafeCareProfileResolver
 import mx.utng.ich.safecare.wearable.data.datalayer.WearIdentityStore
-import mx.utng.ich.safecare.wearable.data.datalayer.WearDataPublisher
 import mx.utng.ich.safecare.wearable.data.local.database.DatabaseProvider
 import mx.utng.ich.safecare.wearable.data.local.entity.AlertaEntity
 import mx.utng.ich.safecare.wearable.data.local.entity.SmartwatchEntity
@@ -110,7 +109,6 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
                 idSmartwatch = serialIdentificador
             )
             ubicacionDao.insertar(nuevaUbicacion)
-            WearDataPublisher(context).publishLocation(nuevaUbicacion)
             if (isOnline) {
                 SupabaseRepository().saveLocation(nuevaUbicacion)
             }
@@ -130,11 +128,6 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
                 Log.w(TAG, "Alerta de zona pendiente de sincronización por el móvil")
             }
         }
-        WearDataPublisher(context).publishAlert(
-            serialIdentificador,
-            alertaLocal,
-            locationData
-        )
     }
 
     private fun triggerVibration(context: Context) {
