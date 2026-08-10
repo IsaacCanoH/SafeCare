@@ -1,3 +1,4 @@
+
 package mx.utng.ich.safecare.wearable.data.local
 
 import mx.utng.ich.safecare.wearable.data.local.database.SafeCareDatabase

@@ -7,12 +7,10 @@ import androidx.lifecycle.viewModelScope
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.launch
-import mx.utng.ich.safecare.data.local.dao.UsuarioDao
 import mx.utng.ich.safecare.data.local.entity.UsuarioEntity
 import mx.utng.ich.safecare.data.remote.SupabaseClient
 import mx.utng.ich.safecare.data.repository.SupabaseRepository
 import mx.utng.ich.safecare.util.SecurityUtils
-import java.util.UUID
 import android.util.Log
 
 sealed class AuthState {
@@ -23,7 +21,6 @@ sealed class AuthState {
 }
 
 class AuthViewModel(
-    private val usuarioDao: UsuarioDao? = null,
     private val supabaseRepository: SupabaseRepository = SupabaseRepository()
 ) : ViewModel() {
     private val _authState = mutableStateOf<AuthState>(AuthState.Idle)
@@ -61,15 +58,16 @@ class AuthViewModel(
             _authState.value = AuthState.Loading
             try {
                 // 1. Registro en Supabase Auth
-                SupabaseClient.client.auth.signUpWith(Email) {
+                val authResponse = SupabaseClient.client.auth.signUpWith(Email) {
                     this.email = email
                     this.password = pass
                 }
                 
-                // 2. Obtener el ID del usuario recién creado (si está disponible inmediatamente)
-                // Nota: Si el correo requiere confirmación, currentSessionOrNull será null.
-                // En ese caso usamos un UUID temporal o esperamos a la confirmación.
-                val userId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: UUID.randomUUID().toString()
+                // 2. Usar siempre el ID real devuelto por Auth, incluso si el correo
+                // todavía requiere confirmación y no existe una sesión local.
+                val userId = authResponse?.id
+                    ?: SupabaseClient.client.auth.currentSessionOrNull()?.user?.id
+                    ?: error("Supabase no devolvio el identificador del usuario")
                 
                 // 3. Hashear la contraseña para nuestras tablas de perfil
                 val passwordHash = SecurityUtils.hashPassword(pass)
@@ -83,11 +81,10 @@ class AuthViewModel(
                 )
 
                 // 4. Guardar en Supabase DB (Tabla personalizada 'usuario')
-                supabaseRepository.saveUser(newUsuario)
+                check(supabaseRepository.saveUser(newUsuario)) {
+                    "No se pudo guardar el perfil de usuario en Supabase"
+                }
                 
-                // 5. Guardar en Room local
-                usuarioDao?.registrar(newUsuario)
-
                 _authState.value = AuthState.Success
             } catch (e: Exception) {
                 Log.e("AuthVM", "Register Error: ${e.message}")

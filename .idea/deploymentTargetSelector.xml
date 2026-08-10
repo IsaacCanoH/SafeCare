@@ -15,10 +15,10 @@
       </SelectionState>
       <SelectionState runConfigName="tv">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-07-25T04:32:32.133176200Z">
+        <DropdownSelection timestamp="2026-08-10T04:34:13.588162800Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Isaac Cano\.android\avd\Wear_OS_Small_Round.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Isaac Cano\.android\avd\Television_720p.avd" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -26,10 +26,10 @@
       </SelectionState>
       <SelectionState runConfigName="wearable">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-07-24T19:03:40.773869400Z">
+        <DropdownSelection timestamp="2026-08-09T19:40:28.315172300Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Isaac Cano\.android\avd\Wear_OS_Small_Round.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Isaac Cano\.android\avd\Wear_OS_Small_Round_2.avd" />
             </handle>
           </Target>
         </DropdownSelection>

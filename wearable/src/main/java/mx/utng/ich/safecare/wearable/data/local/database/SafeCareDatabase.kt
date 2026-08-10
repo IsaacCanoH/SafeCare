@@ -1,3 +1,4 @@
+
 package mx.utng.ich.safecare.wearable.data.local.database
 
 import androidx.room.Database

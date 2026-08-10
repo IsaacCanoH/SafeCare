@@ -1,13 +1,8 @@
 package mx.utng.ich.safecare.data.local.entity
 
-import androidx.room.Entity
-import androidx.room.Embedded
-import androidx.room.PrimaryKey
 import java.util.UUID
 
-@Entity(tableName = "PerfilMonitoreado")
 data class PerfilMonitoreadoEntity(
-    @PrimaryKey
     val idPerfil: String = UUID.randomUUID().toString(),
     val nombre: String,
     val edad: Int,
@@ -18,9 +13,7 @@ data class PerfilMonitoreadoEntity(
     val idCuidador: String
 )
 
-@Entity(tableName = "ZonaSegura")
 data class ZonaSeguraEntity(
-    @PrimaryKey
     val idZona: String = UUID.randomUUID().toString(),
     val nombre: String,
     val latitudCentro: Double,
@@ -30,9 +23,7 @@ data class ZonaSeguraEntity(
     val idPerfil: String
 )
 
-@Entity(tableName = "SmartWatch")
 data class SmartwatchEntity(
-    @PrimaryKey
     val idSmartwatch: String = UUID.randomUUID().toString(),
     val numeroSerie: String,
     val watchInstallationId: String? = null,
@@ -45,9 +36,7 @@ data class SmartwatchEntity(
     val idPerfil: String? = null
 )
 
-@Entity(tableName = "Alerta")
 data class AlertaEntity(
-    @PrimaryKey
     val idAlerta: String = UUID.randomUUID().toString(),
     val tipoAlerta: String,
     val descripcion: String,
@@ -58,14 +47,11 @@ data class AlertaEntity(
 )
 
 data class AlertaConPerfil(
-    @Embedded
     val alerta: AlertaEntity,
     val nombrePerfil: String?
 )
 
-@Entity(tableName = "Ubicacion")
 data class UbicacionEntity(
-    @PrimaryKey
     val idUbicacion: String = UUID.randomUUID().toString(),
     val latitud: Double,
     val longitud: Double,

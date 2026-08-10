@@ -1,3 +1,4 @@
+
 package mx.utng.ich.safecare.wearable.data.local.dao
 
 import androidx.room.Dao
