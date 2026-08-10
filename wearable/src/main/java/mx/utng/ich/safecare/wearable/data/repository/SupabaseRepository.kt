@@ -10,6 +10,10 @@ import mx.utng.ich.safecare.wearable.data.local.entity.UbicacionEntity
 import mx.utng.ich.safecare.wearable.data.local.entity.AlertaEntity
 import mx.utng.ich.safecare.wearable.data.remote.SupabaseClient
 import android.util.Log
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import mx.utng.ich.safecare.wearable.data.local.entity.PerfilMonitoreadoEntity
+import mx.utng.ich.safecare.wearable.data.local.entity.ZonaSeguraEntity
 
 class SupabaseRepository {
 
@@ -49,7 +53,9 @@ class SupabaseRepository {
                     put("fechaHora", location.fechaHora)
                     put("idSmartwatch", location.idSmartwatch)
                 }
-                client.postgrest["Ubicacion"].insert(locationData)
+                client.postgrest["Ubicacion"].upsert(locationData) {
+                    onConflict = "idUbicacion"
+                }
                 true
             } catch (exception: Exception) {
                 Log.e(
@@ -86,4 +92,79 @@ class SupabaseRepository {
                 false
             }
         }
+
+    suspend fun fetchLinkedConfiguration(numeroSerie: String): LinkedConfiguration? =
+        withContext(Dispatchers.IO) {
+            try {
+                val profileId = client.postgrest["SmartWatch"].select(Columns.list("idPerfil")) {
+                    filter { eq("numeroSerie", numeroSerie) }
+                }.decodeList<WatchLinkRow>().firstOrNull()?.idPerfil ?: return@withContext null
+
+                val profile = client.postgrest["PerfilMonitoreado"].select {
+                    filter { eq("idPerfil", profileId) }
+                }.decodeList<ProfileRow>().firstOrNull() ?: return@withContext null
+
+                val zones = client.postgrest["ZonaSegura"].select {
+                    filter { eq("idPerfil", profileId) }
+                }.decodeList<SafeZoneRow>().map { row ->
+                    ZonaSeguraEntity(
+                        idZona = row.id,
+                        nombre = row.nombre,
+                        latitudCentro = row.latitudCentro,
+                        longitudCentro = row.longitudCentro,
+                        radioMetros = row.radioMetros,
+                        activa = row.activa,
+                        idPerfil = row.idPerfil
+                    )
+                }
+
+                LinkedConfiguration(
+                    profile = PerfilMonitoreadoEntity(
+                        idPerfil = profile.id,
+                        nombre = profile.nombre,
+                        edad = profile.edad,
+                        fechaNacimiento = profile.fechaNacimiento,
+                        tipoPerfil = profile.tipoPerfil,
+                        foto = profile.foto,
+                        estadoActual = profile.estadoActual,
+                        idCuidador = profile.idCuidador
+                    ),
+                    zones = zones
+                )
+            } catch (exception: Exception) {
+                Log.w("SupabaseRepo", "No se pudo consultar la configuración remota", exception)
+                null
+            }
+        }
+
+    @Serializable
+    private data class WatchLinkRow(@SerialName("idPerfil") val idPerfil: String? = null)
+
+    @Serializable
+    private data class ProfileRow(
+        @SerialName("idPerfil") val id: String,
+        val nombre: String,
+        val edad: Int,
+        @SerialName("fechaNacimiento") val fechaNacimiento: String? = null,
+        @SerialName("tipoPerfil") val tipoPerfil: String = "menor",
+        val foto: String? = null,
+        @SerialName("estadoActual") val estadoActual: Boolean = true,
+        @SerialName("idCuidador") val idCuidador: String
+    )
+
+    @Serializable
+    private data class SafeZoneRow(
+        @SerialName("idZona") val id: String,
+        val nombre: String,
+        @SerialName("latitudCentro") val latitudCentro: Double,
+        @SerialName("longitudCentro") val longitudCentro: Double,
+        @SerialName("radioMetros") val radioMetros: Double,
+        val activa: Boolean = true,
+        @SerialName("idPerfil") val idPerfil: String
+    )
 }
+
+data class LinkedConfiguration(
+    val profile: PerfilMonitoreadoEntity,
+    val zones: List<ZonaSeguraEntity>
+)

@@ -1,3 +1,4 @@
+
 package mx.utng.ich.safecare.wearable.data.local.entity
 
 import androidx.room.Entity

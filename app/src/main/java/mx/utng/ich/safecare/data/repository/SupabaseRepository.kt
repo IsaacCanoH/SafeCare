@@ -1,6 +1,7 @@
 package mx.utng.ich.safecare.data.repository
 
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
@@ -9,10 +10,15 @@ import mx.utng.ich.safecare.data.remote.SupabaseClient
 import mx.utng.ich.safecare.data.local.entity.UsuarioEntity
 import mx.utng.ich.safecare.data.local.entity.UbicacionEntity
 import mx.utng.ich.safecare.data.local.entity.AlertaEntity
+import mx.utng.ich.safecare.data.local.entity.LatestProfileLocation
+import mx.utng.ich.safecare.data.local.entity.PerfilMonitoreadoEntity
+import mx.utng.ich.safecare.data.local.entity.ZonaSeguraEntity
 import android.util.Log
 import java.util.UUID
 import java.util.Locale
 import java.text.SimpleDateFormat
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 class SupabaseRepository {
 
@@ -180,6 +186,7 @@ class SupabaseRepository {
     }
 
     suspend fun createSafeZone(
+        idZona: String,
         nombre: String,
         lat: Double,
         lng: Double,
@@ -188,6 +195,7 @@ class SupabaseRepository {
     ): Boolean = withContext(Dispatchers.IO) {
         try {
             val zoneJson = buildJsonObject {
+                put("idZona", idZona)
                 put("nombre", nombre)
                 put("latitudCentro", lat)
                 put("longitudCentro", lng)
@@ -248,6 +256,131 @@ class SupabaseRepository {
         }
     }
 
+    suspend fun updateSmartWatchStatus(
+        numeroSerie: String,
+        bateria: Int,
+        conexion: String,
+        ultimaConexion: Long
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val updateData = buildJsonObject {
+                put("bateria", bateria)
+                put("conexion", conexion.lowercase())
+                put("ultimaConexion", ultimaConexion)
+            }
+            client.postgrest["SmartWatch"].update(updateData) {
+                filter { eq("numeroSerie", numeroSerie) }
+            }
+            true
+        } catch (e: Exception) {
+            Log.e("SupabaseRepo", "Error syncing smartwatch status $numeroSerie", e)
+            false
+        }
+    }
+
+    suspend fun fetchProfilesForCaregiver(caregiverId: String): List<PerfilMonitoreadoEntity> =
+        withContext(Dispatchers.IO) {
+            client.postgrest["PerfilMonitoreado"].select {
+                filter { eq("idCuidador", caregiverId) }
+            }.decodeList<ProfileRow>().map { row ->
+                PerfilMonitoreadoEntity(
+                    idPerfil = row.id,
+                    nombre = row.nombre,
+                    edad = row.edad,
+                    fechaNacimiento = row.fechaNacimiento,
+                    tipoPerfil = row.tipoPerfil,
+                    foto = row.foto,
+                    estadoActual = row.estadoActual,
+                    idCuidador = row.idCuidador
+                )
+            }
+        }
+
+    suspend fun fetchSafeZonesForCaregiver(caregiverId: String): List<ZonaSeguraEntity> =
+        withContext(Dispatchers.IO) {
+            val profileIds = client.postgrest["PerfilMonitoreado"].select(Columns.list("idPerfil")) {
+                filter { eq("idCuidador", caregiverId) }
+            }.decodeList<ProfileIdRow>().map(ProfileIdRow::id)
+            if (profileIds.isEmpty()) return@withContext emptyList()
+
+            client.postgrest["ZonaSegura"].select {
+                filter { isIn("idPerfil", profileIds) }
+            }.decodeList<SafeZoneRow>().map { row ->
+                ZonaSeguraEntity(
+                    idZona = row.id,
+                    nombre = row.nombre,
+                    latitudCentro = row.latitudCentro,
+                    longitudCentro = row.longitudCentro,
+                    radioMetros = row.radioMetros,
+                    activa = row.activa,
+                    idPerfil = row.idPerfil
+                )
+            }
+        }
+
+    suspend fun fetchAlertsForCaregiver(caregiverId: String): List<AlertaEntity> =
+        withContext(Dispatchers.IO) {
+            val profileIds = client.postgrest["PerfilMonitoreado"].select(Columns.list("idPerfil")) {
+                filter { eq("idCuidador", caregiverId) }
+            }.decodeList<ProfileIdRow>().map(ProfileIdRow::id)
+            if (profileIds.isEmpty()) return@withContext emptyList()
+
+            client.postgrest["Alerta"].select {
+                filter { isIn("idPerfil", profileIds) }
+            }.decodeList<AlertRow>().map { row ->
+                AlertaEntity(
+                    idAlerta = row.id,
+                    tipoAlerta = row.tipoAlerta,
+                    descripcion = row.descripcion,
+                    fechaHora = row.fechaHora,
+                    estado = row.estado,
+                    idPerfil = row.idPerfil,
+                    idUbicacion = row.idUbicacion
+                )
+            }
+        }
+
+    suspend fun fetchLatestLocationsForCaregiver(caregiverId: String): List<LatestProfileLocation> =
+        withContext(Dispatchers.IO) {
+            val profiles = client.postgrest["PerfilMonitoreado"].select(Columns.list("idPerfil")) {
+                filter { eq("idCuidador", caregiverId) }
+            }.decodeList<ProfileIdRow>()
+            val profileIds = profiles.map(ProfileIdRow::id)
+            if (profileIds.isEmpty()) return@withContext emptyList()
+
+            val watches = client.postgrest["SmartWatch"].select {
+                filter { isIn("idPerfil", profileIds) }
+            }.decodeList<WatchRow>()
+            val watchIds = watches.flatMap { listOfNotNull(it.id, it.numeroSerie) }.distinct()
+            if (watchIds.isEmpty()) return@withContext emptyList()
+
+            val locations = client.postgrest["Ubicacion"].select {
+                filter { isIn("idSmartwatch", watchIds) }
+            }.decodeList<LocationRow>()
+            val latestByWatch = locations.groupBy(LocationRow::idSmartwatch)
+                .mapValues { (_, values) -> values.maxByOrNull(LocationRow::fechaHora) }
+
+            watches.mapNotNull { watch ->
+                val location = latestByWatch[watch.id] ?: watch.numeroSerie?.let(latestByWatch::get)
+                    ?: return@mapNotNull null
+                val profileId = watch.idPerfil ?: return@mapNotNull null
+                LatestProfileLocation(
+                    idPerfil = profileId,
+                    idUbicacion = location.id,
+                    latitud = location.latitud,
+                    longitud = location.longitud,
+                    fechaHora = location.fechaHora,
+                    idSmartwatch = location.idSmartwatch
+                )
+            }
+        }
+
+    suspend fun fetchWatchSerial(profileId: String): String? = withContext(Dispatchers.IO) {
+        client.postgrest["SmartWatch"].select(Columns.list("numeroSerie")) {
+            filter { eq("idPerfil", profileId) }
+        }.decodeList<WatchSerialRow>().firstOrNull()?.numeroSerie
+    }
+
     private fun formatBirthDate(value: String?): String? {
         if (value.isNullOrBlank()) return null
 
@@ -264,4 +397,60 @@ class SupabaseRepository {
             }.getOrNull()
         }
     }
+
+    @Serializable
+    private data class ProfileIdRow(@SerialName("idPerfil") val id: String)
+
+    @Serializable
+    private data class ProfileRow(
+        @SerialName("idPerfil") val id: String,
+        val nombre: String,
+        val edad: Int,
+        @SerialName("fechaNacimiento") val fechaNacimiento: String? = null,
+        @SerialName("tipoPerfil") val tipoPerfil: String = "menor",
+        val foto: String? = null,
+        @SerialName("estadoActual") val estadoActual: Boolean = true,
+        @SerialName("idCuidador") val idCuidador: String
+    )
+
+    @Serializable
+    private data class SafeZoneRow(
+        @SerialName("idZona") val id: String,
+        val nombre: String,
+        @SerialName("latitudCentro") val latitudCentro: Double,
+        @SerialName("longitudCentro") val longitudCentro: Double,
+        @SerialName("radioMetros") val radioMetros: Double,
+        val activa: Boolean = true,
+        @SerialName("idPerfil") val idPerfil: String
+    )
+
+    @Serializable
+    private data class AlertRow(
+        @SerialName("idAlerta") val id: String,
+        @SerialName("tipoAlerta") val tipoAlerta: String,
+        val descripcion: String = "",
+        @SerialName("fechaHora") val fechaHora: Long,
+        val estado: String = "ACTIVA",
+        @SerialName("idPerfil") val idPerfil: String,
+        @SerialName("idUbicacion") val idUbicacion: String? = null
+    )
+
+    @Serializable
+    private data class WatchRow(
+        @SerialName("idSmartwatch") val id: String? = null,
+        @SerialName("numeroSerie") val numeroSerie: String? = null,
+        @SerialName("idPerfil") val idPerfil: String? = null
+    )
+
+    @Serializable
+    private data class WatchSerialRow(@SerialName("numeroSerie") val numeroSerie: String? = null)
+
+    @Serializable
+    private data class LocationRow(
+        @SerialName("idUbicacion") val id: String,
+        val latitud: Double,
+        val longitud: Double,
+        @SerialName("fechaHora") val fechaHora: Long,
+        @SerialName("idSmartwatch") val idSmartwatch: String
+    )
 }

@@ -7,7 +7,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import mx.utng.ich.safecare.wearable.data.local.SafeCareProfileResolver
 import mx.utng.ich.safecare.wearable.data.datalayer.WearIdentityStore
-import mx.utng.ich.safecare.wearable.data.datalayer.WearDataPublisher
 import mx.utng.ich.safecare.wearable.data.local.database.DatabaseProvider
 import mx.utng.ich.safecare.wearable.data.local.entity.AlertaEntity
 import mx.utng.ich.safecare.wearable.data.local.entity.SmartwatchEntity
@@ -85,7 +84,6 @@ class WearStatusController(
                         idSmartwatch = serialIdentificador
                     )
                     ubicacionDao.insertar(nuevaUbicacion)
-                    WearDataPublisher(context).publishLocation(nuevaUbicacion)
                     if (isOnline) {
                         SupabaseRepository().saveLocation(nuevaUbicacion)
                     }
@@ -105,11 +103,6 @@ class WearStatusController(
                         Log.w(TAG, "SOS pendiente de sincronización por el móvil")
                     }
                 }
-                WearDataPublisher(context).publishAlert(
-                    serialIdentificador,
-                    alertaLocal,
-                    locationData
-                )
                 
                 Log.i(TAG, "SOS guardado localmente en Room")
                 Log.i(TAG, "--- FLUJO SOS FINALIZADO ---")

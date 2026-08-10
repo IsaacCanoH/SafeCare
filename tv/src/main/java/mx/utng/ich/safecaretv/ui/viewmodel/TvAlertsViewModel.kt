@@ -37,10 +37,14 @@ class TvAlertsViewModel(application: Application) : AndroidViewModel(application
     private suspend fun refresh() {
         runCatching { repository.getActiveAlerts() }
             .onSuccess { alerts ->
-                if (_activeAlert.value == null) {
-                    _activeAlert.value = alerts.firstOrNull {
-                        !preferences.getBoolean(it.id, false)
-                    }
+                val nextAlert = alerts.firstOrNull {
+                    !preferences.getBoolean(it.id, false)
+                }
+                val currentAlert = _activeAlert.value
+                if (currentAlert == null ||
+                    (nextAlert?.isSos == true && !currentAlert.isSos)
+                ) {
+                    _activeAlert.value = nextAlert
                 }
             }
             .onFailure { Log.e("TvAlerts", "Error loading Supabase alerts", it) }
