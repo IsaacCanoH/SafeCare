@@ -224,6 +224,130 @@ Esta sección funciona como un índice funcional del proyecto: permite localizar
 
 </details>
 
+### Estructura de directorios de los módulos
+
+La siguiente vista muestra la organización de los tres módulos de aplicación. Se omite la carpeta `build/` de cada uno porque contiene archivos generados por Gradle durante la compilación.
+
+<details open>
+<summary><strong>1. <code>app</code> — aplicación móvil</strong></summary>
+
+```text
+app/
+├── build.gradle.kts
+├── proguard-rules.pro
+└── src/
+    ├── androidTest/
+    │   └── java/mx/utng/ich/safecare/
+    ├── main/
+    │   ├── AndroidManifest.xml
+    │   ├── java/mx/utng/ich/safecare/
+    │   │   ├── MainActivity.kt
+    │   │   ├── data/
+    │   │   │   ├── datalayer/
+    │   │   │   ├── local/entity/
+    │   │   │   ├── remote/
+    │   │   │   └── repository/
+    │   │   ├── ui/
+    │   │   │   ├── components/
+    │   │   │   ├── screens/
+    │   │   │   │   ├── alerts/
+    │   │   │   │   ├── dashboard/
+    │   │   │   │   ├── login/
+    │   │   │   │   ├── map/
+    │   │   │   │   ├── profile/
+    │   │   │   │   ├── register/
+    │   │   │   │   └── zone/
+    │   │   │   ├── theme/
+    │   │   │   └── viewmodel/
+    │   │   └── util/
+    │   └── res/
+    │       ├── drawable/
+    │       ├── mipmap-anydpi/ y mipmap-*/
+    │       ├── values/
+    │       └── xml/
+    └── test/
+        └── java/mx/utng/ich/safecare/
+```
+
+</details>
+
+<details>
+<summary><strong>2. <code>wearable</code> — aplicación Wear OS</strong></summary>
+
+```text
+wearable/
+├── build.gradle.kts
+├── lint.xml
+├── proguard-rules.pro
+└── src/
+    └── main/
+        ├── AndroidManifest.xml
+        ├── java/mx/utng/ich/safecare/wearable/
+        │   ├── data/
+        │   │   ├── datalayer/
+        │   │   ├── local/
+        │   │   │   ├── dao/
+        │   │   │   ├── database/
+        │   │   │   └── entity/
+        │   │   ├── model/
+        │   │   ├── remote/
+        │   │   ├── repository/
+        │   │   └── worker/
+        │   └── presentation/
+        │       ├── controller/
+        │       ├── data/
+        │       ├── geofence/
+        │       ├── location/
+        │       ├── sensors/
+        │       ├── theme/
+        │       └── ui/
+        └── res/
+            ├── drawable/
+            ├── mipmap-anydpi/ y mipmap-*/
+            └── values/
+```
+
+</details>
+
+<details>
+<summary><strong>3. <code>tv</code> — aplicación Android TV</strong></summary>
+
+```text
+tv/
+├── build.gradle.kts
+├── proguard-rules.pro
+└── src/
+    ├── androidTest/
+    │   └── java/mx/utng/ich/safecaretv/
+    ├── main/
+    │   ├── AndroidManifest.xml
+    │   ├── java/mx/utng/ich/safecaretv/
+    │   │   ├── MainActivity.kt
+    │   │   ├── data/
+    │   │   │   ├── alert/
+    │   │   │   ├── profile/
+    │   │   │   ├── remote/
+    │   │   │   ├── sound/
+    │   │   │   └── youtube/
+    │   │   └── ui/
+    │   │       ├── alert/
+    │   │       ├── home/
+    │   │       ├── login/
+    │   │       ├── profile/
+    │   │       ├── settings/
+    │   │       ├── theme/
+    │   │       └── viewmodel/
+    │   └── res/
+    │       ├── drawable/
+    │       ├── mipmap-anydpi/ y mipmap-*/
+    │       ├── raw/
+    │       └── values/
+    └── test/
+        └── java/mx/utng/ich/safecaretv/
+```
+
+</details>
+
 ### Límites y responsabilidades entre módulos
 
 | Módulo | Produce | Consume |
@@ -290,4 +414,3 @@ Esta sección funciona como un índice funcional del proyecto: permite localizar
 ### Registro de alerta al salir de zona segura
 
 ![Alerta de zona segura](evidencias/05-registro-notificacion-en-base-de-datos.png)
-
