@@ -3,9 +3,7 @@ package mx.utng.ich.safecare.util
 import java.security.MessageDigest
 
 object SecurityUtils {
-    /**
-     * Genera un hash SHA-256 de una cadena de texto.
-     */
+    // Genera un hash SHA-256 para no guardar la contraseña en texto plano.
     fun hashPassword(password: String): String {
         val bytes = password.toByteArray()
         val md = MessageDigest.getInstance("SHA-256")

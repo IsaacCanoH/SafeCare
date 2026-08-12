@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import mx.utng.ich.safecare.ui.screens.SafeCareApp
 
 class MainActivity : ComponentActivity() {
+    // Inicializa la interfaz principal de la aplicación móvil.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

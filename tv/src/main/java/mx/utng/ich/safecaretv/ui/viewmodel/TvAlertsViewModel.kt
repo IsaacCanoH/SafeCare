@@ -27,6 +27,7 @@ class TvAlertsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    // Marca la alerta actual como atendida en la interfaz.
     fun acknowledge() {
         _activeAlert.value?.let { alert ->
             preferences.edit().putBoolean(alert.id, true).apply()
@@ -34,6 +35,7 @@ class TvAlertsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    // Recarga la alerta más reciente desde el repositorio.
     private suspend fun refresh() {
         runCatching { repository.getActiveAlerts() }
             .onSuccess { alerts ->

@@ -26,6 +26,7 @@ class AuthViewModel(
     private val _authState = mutableStateOf<AuthState>(AuthState.Idle)
     val authState: State<AuthState> = _authState
 
+    // Inicia sesión y actualiza el estado de autenticación.
     fun login(email: String, pass: String) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
@@ -53,6 +54,7 @@ class AuthViewModel(
         }
     }
 
+    // Crea la cuenta y guarda el perfil del nuevo cuidador.
     fun register(name: String, email: String, pass: String) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading

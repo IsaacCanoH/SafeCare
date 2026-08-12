@@ -11,6 +11,7 @@ import mx.utng.ich.safecaretv.data.remote.TvSupabaseClient
 class TvAlertsRepository {
     private val client = TvSupabaseClient.client
 
+    // Consulta las alertas activas para mostrarlas en TV.
     suspend fun getActiveAlerts(): List<TvAlert> =
         client.postgrest["Alerta"].select {
             filter { eq("estado", "ACTIVA") }
@@ -19,6 +20,7 @@ class TvAlertsRepository {
             .filter { it.isSos || it.isSafeZoneExit }
             .sortedByDescending(TvAlert::timestamp)
 
+    // Convierte una fila remota al modelo de alerta de TV.
     private fun toAlert(row: JsonObject): TvAlert? {
         val id = row.text("idAlerta") ?: return null
         val type = row.text("tipoAlerta") ?: return null
@@ -32,6 +34,7 @@ class TvAlertsRepository {
         )
     }
 
+    // Convierte la fecha remota a milisegundos desde época.
     private fun parseTimestamp(value: String?): Long? {
         if (value == null) return null
         return value.toLongOrNull()
@@ -39,6 +42,7 @@ class TvAlertsRepository {
             ?: runCatching { OffsetDateTime.parse(value).toInstant().toEpochMilli() }.getOrNull()
     }
 
+    // Busca el primer texto disponible entre varias claves JSON.
     private fun JsonObject.text(vararg keys: String): String? =
         keys.firstNotNullOfOrNull { key ->
             get(key)?.jsonPrimitive?.contentOrNull

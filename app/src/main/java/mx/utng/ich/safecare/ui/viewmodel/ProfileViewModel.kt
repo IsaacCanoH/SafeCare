@@ -27,6 +27,7 @@ class ProfileViewModel(context: Context, private val repository: SupabaseReposit
     private val _watchDiscoveryMessage = MutableStateFlow<String?>(null)
     val watchDiscoveryMessage: StateFlow<String?> = _watchDiscoveryMessage
 
+    // Carga los perfiles que pertenecen al cuidador actual.
     fun loadProfiles(): Job? {
         val userId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: return null
         return viewModelScope.launch {
@@ -36,6 +37,7 @@ class ProfileViewModel(context: Context, private val repository: SupabaseReposit
         }
     }
 
+    // Busca relojes Wear OS disponibles para vincularlos.
     fun refreshAvailableWatches() = viewModelScope.launch {
         _isDiscoveringWatches.value = true
         runCatching { wearRepository.discoverAvailableWatches() }
@@ -44,6 +46,7 @@ class ProfileViewModel(context: Context, private val repository: SupabaseReposit
         _isDiscoveringWatches.value = false
     }
 
+    // Crea un perfil y, si se eligió, vincula su smartwatch.
     fun addProfile(nombre: String, edad: Int, tipo: String, fechaNacimiento: String?, selectedWatch: AvailableWearDevice?, onComplete: (Boolean) -> Unit) {
         val userId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: return onComplete(false)
         viewModelScope.launch {
@@ -56,12 +59,14 @@ class ProfileViewModel(context: Context, private val repository: SupabaseReposit
         }
     }
 
+    // Guarda los cambios de un perfil y recarga la lista.
     fun updateProfile(idPerfil: String, nombre: String, edad: Int, fechaNacimiento: String?, onComplete: (Boolean) -> Unit) = viewModelScope.launch {
         val success = repository.updateProfile(idPerfil, nombre, edad, fechaNacimiento)
         if (success) loadProfiles()
         onComplete(success)
     }
 
+    // Elimina un perfil y actualiza la lista mostrada.
     fun deleteProfile(idPerfil: String, onComplete: (Boolean) -> Unit) = viewModelScope.launch {
         val success = repository.deleteProfile(idPerfil)
         if (success) loadProfiles()

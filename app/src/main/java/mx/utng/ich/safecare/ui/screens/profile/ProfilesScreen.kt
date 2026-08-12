@@ -21,6 +21,7 @@ import mx.utng.ich.safecare.data.local.entity.PerfilMonitoreadoEntity
 import mx.utng.ich.safecare.ui.viewmodel.ProfileViewModel
 
 @Composable
+// Muestra la lista de perfiles disponibles para el cuidador.
 fun ProfilesScreen(
     viewModel: ProfileViewModel,
     onAddProfileClick: () -> Unit = {},
@@ -103,6 +104,7 @@ fun ProfilesScreen(
 }
 
 @Composable
+// Muestra las acciones y datos básicos de un perfil.
 fun ProfileItem(
     profile: PerfilMonitoreadoEntity, 
     onEditClick: () -> Unit,

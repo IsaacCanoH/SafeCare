@@ -20,6 +20,7 @@ import mx.utng.ich.safecaretv.ui.viewmodel.TvAlertsViewModel
 import mx.utng.ich.safecaretv.ui.settings.TvAlertTonesScreen
 
 @Composable
+// Coordina la navegación y pantallas de la aplicación para TV.
 fun SafeCareTvApp(authViewModel: TvAuthViewModel) {
     val authState by authViewModel.state.collectAsStateWithLifecycle()
 

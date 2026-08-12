@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+// Permite modificar la ubicación y radio de una zona segura.
 fun EditSafeZoneScreen(
     zone: ZonaSeguraEntity,
     viewModel: SafeZoneViewModel,
@@ -152,10 +153,12 @@ fun EditSafeZoneScreen(
                     onMapReady = { mapView ->
                         mapViewInstance = mapView
                         val eventsOverlay = MapEventsOverlay(object : MapEventsReceiver {
+                            // Usa el toque para cambiar el centro de la zona.
                             override fun singleTapConfirmedHelper(p: GeoPoint): Boolean {
                                 centerPoint = p
                                 return true
                             }
+                            // Ignora las pulsaciones prolongadas del mapa.
                             override fun longPressHelper(p: GeoPoint): Boolean = false
                         })
                         mapView.overlays.add(eventsOverlay)

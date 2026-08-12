@@ -11,9 +11,11 @@ import mx.utng.ich.safecare.wearable.data.local.entity.SmartwatchEntity
 interface SmartwatchDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    // Guarda o actualiza el estado local del smartwatch.
     suspend fun insertarOActualizar(smartwatch: SmartwatchEntity): Long
 
     @Query("SELECT * FROM SmartWatch ORDER BY ultimaConexion DESC, idSmartwatch DESC LIMIT 1")
+    // Obtiene el último estado registrado del smartwatch.
     suspend fun obtenerEstado(): SmartwatchEntity?
 
     @Query(
@@ -24,6 +26,7 @@ interface SmartwatchDao {
         LIMIT 1
         """
     )
+    // Busca un smartwatch local por su número de serie.
     suspend fun obtenerPorNumeroSerie(numeroSerie: String): SmartwatchEntity?
 
     @Query(
@@ -36,5 +39,6 @@ interface SmartwatchDao {
         )
         """
     )
+    // Conserva solo los estados de smartwatch más recientes.
     suspend fun conservarSoloRegistrosRecientes(maxRecords: Int)
 }

@@ -23,6 +23,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
+// Muestra las alertas recibidas y mantiene su contenido actualizado.
 fun AlertsScreen(viewModel: AlertViewModel) {
     val alerts by viewModel.alerts.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -64,6 +65,7 @@ fun AlertsScreen(viewModel: AlertViewModel) {
 }
 
 @Composable
+// Presenta la información principal de una alerta individual.
 fun AlertItem(item: AlertaConPerfil) {
     val alert = item.alerta
     val sdf = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
@@ -132,6 +134,7 @@ fun AlertItem(item: AlertaConPerfil) {
     }
 }
 
+// Genera el mensaje visible según el tipo de alerta.
 fun alertMessage(item: AlertaConPerfil): String {
     val name = item.nombrePerfil?.trim().takeUnless { it.isNullOrEmpty() }
         ?: "Perfil sin nombre"
@@ -142,6 +145,7 @@ fun alertMessage(item: AlertaConPerfil): String {
     }
 }
 
+// Genera el título visible según el tipo de alerta.
 fun alertTitle(item: AlertaConPerfil): String =
     when (item.alerta.tipoAlerta) {
         "SOS" -> "SOS"

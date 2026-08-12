@@ -25,6 +25,7 @@ import org.json.JSONObject
 class WearDataLayerService : WearableListenerService() {
     private val executor = Executors.newSingleThreadExecutor()
 
+    // Atiende solicitudes recibidas desde el teléfono emparejado.
     override fun onRequest(
         nodeId: String,
         path: String,
@@ -51,11 +52,13 @@ class WearDataLayerService : WearableListenerService() {
         }
     }
 
+    // Libera los recursos locales al destruir el servicio.
     override fun onDestroy() {
         executor.shutdown()
         super.onDestroy()
     }
 
+    // Construye la información de identificación y batería del reloj.
     private fun deviceInfo(): JSONObject {
         val batteryManager = getSystemService(BATTERY_SERVICE) as BatteryManager
         return successResponse()
@@ -68,6 +71,7 @@ class WearDataLayerService : WearableListenerService() {
             )
     }
 
+    // Guarda localmente el perfil enviado para vincular el reloj.
     private fun linkProfile(payload: JSONObject): JSONObject = runBlocking {
         val watchId = WearIdentityStore(this@WearDataLayerService).getOrCreateWatchId()
         val requestedWatchId = payload.getString(KEY_WATCH_ID)
@@ -104,6 +108,7 @@ class WearDataLayerService : WearableListenerService() {
         successResponse()
     }
 
+    // Reemplaza las zonas locales por las recibidas del teléfono.
     private fun syncZones(payload: JSONObject): JSONObject = runBlocking {
         val profileId = payload.getString(KEY_PROFILE_ID)
         val database = DatabaseProvider.getDatabase(this@WearDataLayerService)
@@ -150,6 +155,7 @@ class WearDataLayerService : WearableListenerService() {
         successResponse().put("count", zones.size)
     }
 
+    // Elimina localmente el perfil y sus zonas asociadas.
     private fun unlinkProfile(payload: JSONObject): JSONObject = runBlocking {
         val profileId = payload.getString(KEY_PROFILE_ID)
         val database = DatabaseProvider.getDatabase(this@WearDataLayerService)
@@ -167,6 +173,7 @@ class WearDataLayerService : WearableListenerService() {
         successResponse()
     }
 
+    // Guarda y muestra una alerta personalizada recibida del teléfono.
     private fun receiveCustomAlert(payload: JSONObject): JSONObject = runBlocking {
         val profileId = payload.getString(KEY_PROFILE_ID)
         val message = payload.getString(KEY_DESCRIPTION).trim()
@@ -204,17 +211,21 @@ class WearDataLayerService : WearableListenerService() {
         successResponse()
     }
 
+    // Obtiene el porcentaje actual de batería del reloj.
     private fun currentBatteryLevel(): Int {
         val batteryManager = getSystemService(BATTERY_SERVICE) as BatteryManager
         return batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
     }
 
+    // Crea una respuesta JSON de operación exitosa.
     private fun successResponse() = JSONObject().put(KEY_SUCCESS, true)
 
+    // Crea una respuesta JSON con el error de la operación.
     private fun errorResponse(message: String) = JSONObject()
         .put(KEY_SUCCESS, false)
         .put(KEY_ERROR, message)
 
+    // Obtiene un texto JSON tratando valores nulos como ausencia.
     private fun JSONObject.optNullableString(key: String): String? =
         if (isNull(key)) null else optString(key).takeIf { it.isNotBlank() }
 

@@ -26,6 +26,7 @@ class AlertActivity : ComponentActivity() {
     private var vibrator: Vibrator? = null
     private var displayAddress by mutableStateOf("Ubicacion desconocida")
 
+    // Muestra y activa los recursos de una alerta urgente.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -58,17 +59,20 @@ class AlertActivity : ComponentActivity() {
         }
     }
 
+    // Cierra la alerta y elimina la notificación asociada.
     private fun dismissAlert() {
         stopVibration()
         SafeCareAlertNotifier.dismissSafeZoneExitNotification(this)
         finish()
     }
 
+    // Detiene la vibración al cerrar la pantalla de alerta.
     override fun onDestroy() {
         stopVibration()
         super.onDestroy()
     }
 
+    // Mantiene la alerta visible a pantalla completa sobre otras vistas.
     private fun showAsPersistentFullScreenAlert() {
         // Mantener la pantalla encendida y mostrar sobre el bloqueo.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -84,6 +88,7 @@ class AlertActivity : ComponentActivity() {
         )
     }
 
+    // Inicia el patrón de vibración de emergencia.
     private fun startEmergencyVibration() {
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vibratorManager =
@@ -107,14 +112,17 @@ class AlertActivity : ComponentActivity() {
         }
     }
 
+    // Cancela cualquier vibración activa del reloj.
     private fun stopVibration() {
         vibrator?.cancel()
     }
 
+    // Verifica que las coordenadas recibidas sean utilizables.
     private fun hasCoordinates(latitude: Double, longitude: Double): Boolean {
         return !latitude.isNaN() && !longitude.isNaN()
     }
 
+    // Convierte coordenadas de alerta en una dirección para mostrar.
     private suspend fun resolveAddressFromCoordinates(
         latitude: Double,
         longitude: Double
@@ -133,6 +141,7 @@ class AlertActivity : ComponentActivity() {
         }.getOrNull()
     }
 
+    // Convierte una dirección geocodificada a texto visible.
     private fun Address.toDisplayAddress(): String? {
         val street = listOfNotNull(thoroughfare, subThoroughfare)
             .filter { it.isNotBlank() }
@@ -157,6 +166,7 @@ class AlertActivity : ComponentActivity() {
 
     // Deshabilitar el boton de atras para evitar el cierre accidental.
     @Deprecated("Deprecated in Java")
+    // Evita cerrar la alerta urgente con el botón de regresar.
     override fun onBackPressed() {
         // No hacer nada para evitar el cierre accidental.
     }

@@ -21,6 +21,7 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+// Muestra el formulario para crear un perfil monitoreado.
 fun AddProfileScreen(
     viewModel: ProfileViewModel,
     onBackClick: () -> Unit = {},
@@ -336,6 +337,7 @@ fun AddProfileScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+// Muestra una opción seleccionable para el tipo de perfil.
 fun ProfileTypeChip(
     selected: Boolean,
     onClick: () -> Unit,

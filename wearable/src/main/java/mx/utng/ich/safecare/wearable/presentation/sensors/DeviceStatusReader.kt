@@ -12,6 +12,7 @@ class DeviceStatusReader(
     private val context: Context
 ) {
 
+    // Reúne el estado de batería y conexión del reloj.
     fun getDeviceStatus(): DeviceStatus {
         return DeviceStatus(
             batteryText = getBatteryStatusText(),
@@ -19,6 +20,7 @@ class DeviceStatusReader(
         )
     }
 
+    // Obtiene el porcentaje actual de batería del dispositivo.
     fun getBatteryLevel(): Int {
         val batteryIntent: Intent? =
             context.registerReceiver(
@@ -30,6 +32,7 @@ class DeviceStatusReader(
         return if (level >= 0 && scale > 0) (level * 100) / scale else -1
     }
 
+    // Verifica si el reloj tiene una conexión de red activa.
     fun isOnline(): Boolean {
         val connectivityManager = context.getSystemService(ConnectivityManager::class.java)
         val activeNetwork = connectivityManager.activeNetwork ?: return false
@@ -38,6 +41,7 @@ class DeviceStatusReader(
                 networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 
+    // Genera el texto de estado según la carga actual.
     private fun getBatteryStatusText(): String {
         val batteryIntent: Intent? =
             context.registerReceiver(
@@ -79,6 +83,7 @@ class DeviceStatusReader(
         }
     }
 
+    // Genera el texto de estado según la conectividad actual.
     private fun getConnectionStatusText(): String {
         val connectivityManager =
             context.getSystemService(ConnectivityManager::class.java)

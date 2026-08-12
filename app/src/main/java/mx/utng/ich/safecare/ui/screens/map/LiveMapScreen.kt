@@ -26,6 +26,7 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 
 @Composable
+// Muestra el mapa con la última ubicación y zonas de los perfiles.
 fun LiveMapScreen(
     profileViewModel: ProfileViewModel,
     zoneViewModel: SafeZoneViewModel,
@@ -264,6 +265,7 @@ fun LiveMapScreen(
 
 private const val MAX_CUSTOM_ALERT_LENGTH = 160
 
+// Convierte una marca de tiempo en un texto de tiempo transcurrido.
 private fun formatElapsedTime(timestamp: Long): String {
     val elapsedSeconds =
         ((System.currentTimeMillis() - timestamp) / 1_000).coerceAtLeast(0)

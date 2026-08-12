@@ -27,9 +27,14 @@ import mx.utng.ich.safecare.wearable.data.local.entity.PerfilMonitoreadoEntity
 )
 abstract class SafeCareDatabase : RoomDatabase() {
 
+    // Expone las operaciones locales para las alertas.
     abstract fun alertaDao(): AlertaDao
+    // Expone las operaciones locales para las ubicaciones.
     abstract fun ubicacionDao(): UbicacionDao
+    // Expone las operaciones locales para el estado del reloj.
     abstract fun smartwatchDao(): SmartwatchDao
+    // Expone las operaciones locales para las zonas seguras.
     abstract fun zonaSeguraDao(): ZonaSeguraDao
+    // Expone las operaciones locales para los perfiles monitoreados.
     abstract fun perfilMonitoreadoDao(): PerfilMonitoreadoDao
 }

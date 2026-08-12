@@ -16,6 +16,7 @@ class SafeZoneMonitor(context: Context) {
     private val appContext = context.applicationContext
     private val preferences = appContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
 
+    // Evalúa si la ubicación actual salió de una zona segura.
     suspend fun evaluate(location: Location) {
         val database = DatabaseProvider.getDatabase(appContext)
         val profileId = SafeCareProfileResolver.resolveProfileId(database)
@@ -60,10 +61,12 @@ class SafeZoneMonitor(context: Context) {
         }
     }
 
+    // Reinicia el estado de salida registrado para un perfil.
     fun reset(profileId: String) {
         preferences.edit().remove("$STATE_KEY_PREFIX$profileId").apply()
     }
 
+    // Obtiene el nombre de la zona segura más cercana.
     private fun nearestZoneLabel(
         location: Location,
         zones: List<mx.utng.ich.safecare.wearable.data.local.entity.ZonaSeguraEntity>
@@ -76,6 +79,7 @@ class SafeZoneMonitor(context: Context) {
         )
     }?.nombre
 
+    // Calcula la distancia en metros entre dos coordenadas.
     private fun distanceMeters(
         latitude: Double,
         longitude: Double,

@@ -24,6 +24,7 @@ class SupabaseRepository {
 
     private val client = SupabaseClient.client
 
+    // Guarda o actualiza la ubicación recibida en Supabase.
     suspend fun saveLocation(location: UbicacionEntity): Boolean = withContext(Dispatchers.IO) {
         try {
             val locationData = buildJsonObject {
@@ -43,6 +44,7 @@ class SupabaseRepository {
         }
     }
 
+    // Guarda o actualiza una alerta en Supabase.
     suspend fun saveAlert(alert: AlertaEntity): Boolean = withContext(Dispatchers.IO) {
         try {
             val alertData = buildJsonObject {
@@ -64,6 +66,7 @@ class SupabaseRepository {
         }
     }
 
+    // Registra los datos del cuidador en la base remota.
     suspend fun saveUser(usuario: UsuarioEntity): Boolean = withContext(Dispatchers.IO) {
         try {
             val userJson = buildJsonObject {
@@ -83,6 +86,7 @@ class SupabaseRepository {
         }
     }
 
+    // Crea un perfil monitoreado y vincula su reloj si existe.
     suspend fun createProfile(
         nombre: String, 
         edad: Int, 
@@ -132,6 +136,7 @@ class SupabaseRepository {
         }
     }
 
+    // Actualiza los datos editables de un perfil monitoreado.
     suspend fun updateProfile(
         idPerfil: String,
         nombre: String,
@@ -164,6 +169,7 @@ class SupabaseRepository {
         }
     }
 
+    // Elimina un perfil y el reloj que tenga vinculado.
     suspend fun deleteProfile(idPerfil: String): Boolean = withContext(Dispatchers.IO) {
         try {
             // Primero intentamos borrar el smartwatch vinculado si existe (dependiendo de tus FK)
@@ -185,6 +191,7 @@ class SupabaseRepository {
         }
     }
 
+    // Crea una zona segura para el perfil seleccionado.
     suspend fun createSafeZone(
         idZona: String,
         nombre: String,
@@ -211,6 +218,7 @@ class SupabaseRepository {
         }
     }
 
+    // Actualiza la ubicación, radio o estado de una zona segura.
     suspend fun updateSafeZone(
         idZona: String,
         nombre: String,
@@ -239,6 +247,7 @@ class SupabaseRepository {
         }
     }
 
+    // Activa o desactiva el monitoreo de una zona segura.
     suspend fun toggleSafeZoneStatus(idZona: String, activa: Boolean): Boolean = withContext(Dispatchers.IO) {
         try {
             val updateData = buildJsonObject {
@@ -256,6 +265,7 @@ class SupabaseRepository {
         }
     }
 
+    // Sincroniza la batería y conexión actual del smartwatch.
     suspend fun updateSmartWatchStatus(
         numeroSerie: String,
         bateria: Int,
@@ -278,6 +288,7 @@ class SupabaseRepository {
         }
     }
 
+    // Obtiene los perfiles asociados al cuidador autenticado.
     suspend fun fetchProfilesForCaregiver(caregiverId: String): List<PerfilMonitoreadoEntity> =
         withContext(Dispatchers.IO) {
             client.postgrest["PerfilMonitoreado"].select {
@@ -296,6 +307,7 @@ class SupabaseRepository {
             }
         }
 
+    // Obtiene las zonas seguras de los perfiles del cuidador.
     suspend fun fetchSafeZonesForCaregiver(caregiverId: String): List<ZonaSeguraEntity> =
         withContext(Dispatchers.IO) {
             val profileIds = client.postgrest["PerfilMonitoreado"].select(Columns.list("idPerfil")) {
@@ -318,6 +330,7 @@ class SupabaseRepository {
             }
         }
 
+    // Obtiene las alertas generadas por los perfiles del cuidador.
     suspend fun fetchAlertsForCaregiver(caregiverId: String): List<AlertaEntity> =
         withContext(Dispatchers.IO) {
             val profileIds = client.postgrest["PerfilMonitoreado"].select(Columns.list("idPerfil")) {
@@ -340,6 +353,7 @@ class SupabaseRepository {
             }
         }
 
+    // Obtiene la última ubicación disponible de cada perfil.
     suspend fun fetchLatestLocationsForCaregiver(caregiverId: String): List<LatestProfileLocation> =
         withContext(Dispatchers.IO) {
             val profiles = client.postgrest["PerfilMonitoreado"].select(Columns.list("idPerfil")) {
@@ -375,12 +389,14 @@ class SupabaseRepository {
             }
         }
 
+    // Busca el número de serie del reloj vinculado al perfil.
     suspend fun fetchWatchSerial(profileId: String): String? = withContext(Dispatchers.IO) {
         client.postgrest["SmartWatch"].select(Columns.list("numeroSerie")) {
             filter { eq("idPerfil", profileId) }
         }.decodeList<WatchSerialRow>().firstOrNull()?.numeroSerie
     }
 
+    // Convierte una fecha válida al formato requerido por Supabase.
     private fun formatBirthDate(value: String?): String? {
         if (value.isNullOrBlank()) return null
 

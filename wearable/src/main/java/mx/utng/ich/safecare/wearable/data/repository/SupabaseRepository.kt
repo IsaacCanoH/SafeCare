@@ -19,6 +19,7 @@ class SupabaseRepository {
 
     private val client = SupabaseClient.client
 
+    // Sincroniza el estado actual del smartwatch con Supabase.
     suspend fun updateSmartWatchStatus(
         numeroSerie: String,
         bateria: Int,
@@ -43,6 +44,7 @@ class SupabaseRepository {
         }
     }
 
+    // Guarda la ubicación generada por el smartwatch en Supabase.
     suspend fun saveLocation(location: UbicacionEntity): Boolean =
         withContext(Dispatchers.IO) {
             try {
@@ -67,6 +69,7 @@ class SupabaseRepository {
             }
         }
 
+    // Guarda una alerta del smartwatch en Supabase.
     suspend fun saveAlert(alert: AlertaEntity): Boolean =
         withContext(Dispatchers.IO) {
             try {
@@ -93,6 +96,7 @@ class SupabaseRepository {
             }
         }
 
+    // Obtiene la configuración remota vinculada a este reloj.
     suspend fun fetchLinkedConfiguration(numeroSerie: String): LinkedConfiguration? =
         withContext(Dispatchers.IO) {
             try {

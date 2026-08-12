@@ -30,6 +30,7 @@ class AlertViewModel(
     val isLoading: StateFlow<Boolean> = _isLoading
     private var realtimeJob: Job? = null
 
+    // Carga las alertas junto con el nombre de cada perfil.
     fun refreshAlerts(): Job? {
         val caregiverId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: return null
         return viewModelScope.launch {
@@ -42,6 +43,7 @@ class AlertViewModel(
         }
     }
 
+    // Escucha nuevas alertas remotas y refresca la pantalla.
     fun startRealtimeUpdates() {
         if (realtimeJob != null) return
         val caregiverId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: return
@@ -63,6 +65,7 @@ class AlertViewModel(
         }
     }
 
+    // Envía una alerta personalizada al reloj del perfil elegido.
     fun sendCustomAlert(profileId: String, message: String, onResult: (Result<Unit>) -> Unit) {
         val cleanMessage = message.trim()
         if (cleanMessage.isEmpty()) return onResult(Result.failure(IllegalArgumentException("Escribe un mensaje para la alerta")))

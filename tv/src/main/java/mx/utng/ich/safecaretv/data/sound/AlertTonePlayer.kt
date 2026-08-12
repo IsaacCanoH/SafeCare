@@ -7,6 +7,7 @@ import android.media.MediaPlayer
 class AlertTonePlayer(private val context: Context) {
     private var mediaPlayer: MediaPlayer? = null
 
+    // Reproduce una vista previa corta del tono seleccionado.
     fun playPreview(tone: AlertTone) {
         stop()
         mediaPlayer = createPlayer(tone.soundResId).apply {
@@ -19,6 +20,7 @@ class AlertTonePlayer(private val context: Context) {
         }
     }
 
+    // Reproduce el tono configurado para una alerta activa.
     fun playAlert(tone: AlertTone) {
         stop()
         mediaPlayer = createPlayer(tone.soundResId).apply {
@@ -27,6 +29,7 @@ class AlertTonePlayer(private val context: Context) {
         }
     }
 
+    // Detiene y libera el reproductor de audio actual.
     fun stop() {
         mediaPlayer?.runCatching {
             if (isPlaying) stop()
@@ -35,6 +38,7 @@ class AlertTonePlayer(private val context: Context) {
         mediaPlayer = null
     }
 
+    // Crea un reproductor de audio con el recurso indicado.
     private fun createPlayer(soundResId: Int): MediaPlayer {
         val descriptor = context.resources.openRawResourceFd(soundResId)
         return MediaPlayer().apply {
