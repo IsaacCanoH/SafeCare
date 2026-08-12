@@ -2,6 +2,9 @@ package mx.utng.ich.safecare.data.repository
 
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Order
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
@@ -368,11 +371,17 @@ class SupabaseRepository {
             val watchIds = watches.flatMap { listOfNotNull(it.id, it.numeroSerie) }.distinct()
             if (watchIds.isEmpty()) return@withContext emptyList()
 
-            val locations = client.postgrest["Ubicacion"].select {
-                filter { isIn("idSmartwatch", watchIds) }
-            }.decodeList<LocationRow>()
-            val latestByWatch = locations.groupBy(LocationRow::idSmartwatch)
-                .mapValues { (_, values) -> values.maxByOrNull(LocationRow::fechaHora) }
+            val latestByWatch = coroutineScope {
+                watchIds.map { watchId ->
+                    async {
+                        watchId to client.postgrest["Ubicacion"].select {
+                            filter { eq("idSmartwatch", watchId) }
+                            order("fechaHora", Order.DESCENDING)
+                            limit(1)
+                        }.decodeList<LocationRow>().firstOrNull()
+                    }
+                }.map { it.await() }.toMap()
+            }
 
             watches.mapNotNull { watch ->
                 val location = latestByWatch[watch.id] ?: watch.numeroSerie?.let(latestByWatch::get)

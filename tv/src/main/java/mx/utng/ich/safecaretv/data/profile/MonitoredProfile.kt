@@ -23,7 +23,9 @@ data class MonitoredProfile(
     val longitude: Double?,
     val locationTimestamp: Long?,
     val currentSafeZoneName: String?,
-    val safeZones: List<SafeZoneInfo>
+    val safeZones: List<SafeZoneInfo>,
+    /** Identificadores aceptados por Ubicacion para actualizar este perfil desde Realtime. */
+    val watchIds: Set<String> = emptySet()
 )
 
 data class SafeZoneInfo(

@@ -2,6 +2,7 @@ package mx.utng.ich.safecaretv.data.profile
 
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.SerialName
@@ -46,12 +47,12 @@ class MonitoredProfilesRepository {
         val watchIds = watches
             .flatMap { listOfNotNull(it.id, it.serialNumber) }
             .distinct()
-        val locations = if (watchIds.isEmpty()) {
-            emptyList()
-        } else {
+        val locations = watchIds.mapNotNull { watchId ->
             client.postgrest["Ubicacion"].select {
-                filter { isIn("idSmartwatch", watchIds) }
-            }.decodeList<LocationRow>()
+                filter { eq("idSmartwatch", watchId) }
+                order("fechaHora", Order.DESCENDING)
+                limit(1)
+            }.decodeList<LocationRow>().firstOrNull()
         }
 
         val watchByProfile = watches
@@ -113,7 +114,8 @@ class MonitoredProfilesRepository {
                 currentSafeZoneName = currentZone?.name,
                 safeZones = profileZones.map {
                     SafeZoneInfo(it.name, it.latitude, it.longitude, it.radiusMeters)
-                }
+                },
+                watchIds = watch?.let { listOfNotNull(it.id, it.serialNumber).toSet() }.orEmpty()
             )
         }
     }
