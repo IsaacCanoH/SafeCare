@@ -12,6 +12,7 @@ import mx.utng.ich.safecare.wearable.data.local.entity.UbicacionEntity
 class WearDataPublisher(context: Context) {
     private val dataClient = Wearable.getDataClient(context.applicationContext)
 
+    // Envía el estado del smartwatch a la aplicación móvil.
     fun publishStatus(status: SmartwatchEntity) {
         val request = PutDataMapRequest.create("$PATH_STATUS${status.idSmartwatch}").apply {
             dataMap.putString(KEY_WATCH_ID, status.idSmartwatch)
@@ -24,6 +25,7 @@ class WearDataPublisher(context: Context) {
             .addOnFailureListener { Log.w(TAG, "Estado pendiente de sincronización", it) }
     }
 
+    // Envía una alerta y sus coordenadas a la aplicación móvil.
     fun publishAlert(
         watchId: String,
         alert: AlertaEntity,
@@ -48,6 +50,7 @@ class WearDataPublisher(context: Context) {
             .addOnFailureListener { Log.w(TAG, "Alerta pendiente de sincronización", it) }
     }
 
+    // Envía una ubicación nueva a la aplicación móvil.
     fun publishLocation(location: UbicacionEntity) {
         val request = PutDataMapRequest.create("$PATH_LOCATION${location.idSmartwatch}").apply {
             dataMap.putString(KEY_WATCH_ID, location.idSmartwatch)

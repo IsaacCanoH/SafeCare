@@ -30,10 +30,12 @@ class SafeZoneViewModel(context: Context, private val repository: SupabaseReposi
     val searchResults: StateFlow<List<Pair<String, GeoPoint>>> = _searchResults
     private var searchJob: Job? = null
 
+    // Carga las zonas seguras de los perfiles del cuidador.
     fun loadZones(): Job? {
         val userId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: return null
         return viewModelScope.launch { runCatching { repository.fetchSafeZonesForCaregiver(userId) }.onSuccess { _zones.value = it } }
     }
+    // Busca direcciones y devuelve sus coordenadas en el mapa.
     fun searchLocation(query: String) {
         if (query.length < 3) { _searchResults.value = emptyList(); return }
         searchJob?.cancel()
@@ -68,7 +70,9 @@ class SafeZoneViewModel(context: Context, private val repository: SupabaseReposi
             }
         }
     }
+    // Borra los resultados de la búsqueda de ubicación.
     fun clearSearch() { _searchResults.value = emptyList() }
+    // Crea una zona segura con las coordenadas seleccionadas.
     fun addZone(nombre: String, lat: Double, lng: Double, radio: Double, idPerfil: String, onComplete: (Boolean) -> Unit) = viewModelScope.launch {
         _isLoading.value = true
         val zone = ZonaSeguraEntity(nombre = nombre, latitudCentro = lat, longitudCentro = lng, radioMetros = radio, idPerfil = idPerfil)
@@ -79,10 +83,12 @@ class SafeZoneViewModel(context: Context, private val repository: SupabaseReposi
         _isLoading.value = false
         onComplete(success)
     }
+    // Guarda los cambios de una zona segura existente.
     fun updateZone(idZona: String, nombre: String, lat: Double, lng: Double, radio: Double, idPerfil: String, onComplete: (Boolean) -> Unit) = viewModelScope.launch {
         val success = repository.updateSafeZone(idZona, nombre, lat, lng, radio)
         if (success) loadZones(); onComplete(success)
     }
+    // Cambia el estado activo de una zona segura.
     fun toggleZoneStatus(zone: ZonaSeguraEntity, newStatus: Boolean) = viewModelScope.launch {
         if (repository.toggleSafeZoneStatus(zone.idZona, newStatus)) {
             loadZones()

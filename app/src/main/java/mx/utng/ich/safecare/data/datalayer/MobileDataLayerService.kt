@@ -17,6 +17,7 @@ import mx.utng.ich.safecare.data.repository.SupabaseRepository
 class MobileDataLayerService : WearableListenerService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val repository = SupabaseRepository()
+    // Recibe y procesa los datos nuevos enviados desde el smartwatch.
     override fun onDataChanged(events: DataEventBuffer) {
         // DataEventBuffer solo es vÃ¡lido durante esta llamada. Congelamos los datos
         // antes de lanzar la corrutina para evitar "Buffer is closed".
@@ -31,7 +32,9 @@ class MobileDataLayerService : WearableListenerService() {
             }
         }
     }
+    // Cancela las tareas pendientes al detener el servicio.
     override fun onDestroy() { scope.cancel(); super.onDestroy() }
+    // Guarda el estado, ubicación o alerta recibida según su ruta.
     private suspend fun process(item: com.google.android.gms.wearable.DataItem) {
         val data = DataMapItem.fromDataItem(item).dataMap
         when {

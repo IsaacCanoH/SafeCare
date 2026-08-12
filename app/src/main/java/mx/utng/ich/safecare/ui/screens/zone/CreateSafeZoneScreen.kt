@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+// Permite definir y guardar una nueva zona segura en el mapa.
 fun CreateSafeZoneScreen(
     viewModel: SafeZoneViewModel,
     profiles: List<PerfilMonitoreadoEntity> = emptyList(),
@@ -169,10 +170,12 @@ fun CreateSafeZoneScreen(
                         
                         // Añadir gestor de eventos de toque
                         val eventsOverlay = MapEventsOverlay(object : MapEventsReceiver {
+                            // Usa el toque para seleccionar el centro de la zona.
                             override fun singleTapConfirmedHelper(p: GeoPoint): Boolean {
                                 centerPoint = p // Esto disparará el LaunchedEffect
                                 return true
                             }
+                            // Ignora las pulsaciones prolongadas del mapa.
                             override fun longPressHelper(p: GeoPoint): Boolean = false
                         })
                         mapView.overlays.add(eventsOverlay)

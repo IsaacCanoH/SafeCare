@@ -27,6 +27,7 @@ class WearDataLayerRepository(context: Context) {
     private val capabilityClient = Wearable.getCapabilityClient(appContext)
     private val messageClient = Wearable.getMessageClient(appContext)
 
+    // Detecta relojes cercanos que pueden vincularse a un perfil.
     suspend fun discoverAvailableWatches(): List<AvailableWearDevice> =
         withContext(Dispatchers.IO) {
             val capability = Tasks.await(
@@ -65,6 +66,7 @@ class WearDataLayerRepository(context: Context) {
             )
         }
 
+    // Envía al reloj los datos del perfil que se va a monitorear.
     suspend fun linkProfile(
         device: AvailableWearDevice,
         profile: PerfilMonitoreadoEntity
@@ -87,6 +89,7 @@ class WearDataLayerRepository(context: Context) {
         }
     }
 
+    // Sincroniza las zonas seguras activas con el reloj.
     suspend fun syncZones(
         nodeId: String,
         profileId: String,
@@ -115,6 +118,7 @@ class WearDataLayerRepository(context: Context) {
         }
     }
 
+    // Solicita al reloj eliminar el perfil vinculado.
     suspend fun unlinkProfile(nodeId: String, profileId: String): Result<Unit> =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -129,6 +133,7 @@ class WearDataLayerRepository(context: Context) {
             }
         }
 
+    // Envía una alerta personalizada al reloj conectado.
     suspend fun sendCustomAlert(
         nodeId: String,
         alert: AlertaEntity
@@ -148,6 +153,7 @@ class WearDataLayerRepository(context: Context) {
         }
     }
 
+    // Ejecuta una petición con respuesta hacia un nodo Wear OS.
     private fun sendRequest(nodeId: String, path: String, payload: JSONObject): JSONObject {
         val response = Tasks.await(
             messageClient.sendRequest(

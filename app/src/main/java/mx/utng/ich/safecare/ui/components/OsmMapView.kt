@@ -16,6 +16,7 @@ import org.osmdroid.views.overlay.Polygon
 import org.osmdroid.views.overlay.infowindow.MarkerInfoWindow
 
 @Composable
+// Muestra un mapa de OpenStreetMap y entrega la vista ya configurada.
 fun OsmMapView(
     modifier: Modifier = Modifier,
     center: GeoPoint = GeoPoint(21.1526, -100.9312),
@@ -56,6 +57,7 @@ fun OsmMapView(
     )
 }
 
+// Agrega un marcador simple en las coordenadas indicadas.
 fun MapView.addSimpleMarker(point: GeoPoint, title: String) {
     val marker = Marker(this)
     marker.position = point
@@ -65,6 +67,7 @@ fun MapView.addSimpleMarker(point: GeoPoint, title: String) {
     this.invalidate()
 }
 
+// Dibuja el perímetro circular de una zona segura.
 fun MapView.addSafeZoneCircle(center: GeoPoint, radiusInMeters: Double, color: Int) {
     val circle = Polygon(this)
     circle.points = Polygon.pointsAsCircle(center, radiusInMeters)

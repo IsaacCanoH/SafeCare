@@ -85,6 +85,7 @@ class MainActivity : ComponentActivity() {
             startLocationTrackingIfPossible()
         }
 
+    // Inicializa la app del reloj y prepara el monitoreo.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -112,6 +113,7 @@ class MainActivity : ComponentActivity() {
         requestMonitoringPermissionsOrSetupGeofences()
     }
 
+    // Programa la actualización periódica del estado del reloj.
     private fun setupPeriodicMonitoring() {
         val monitorWorkRequest = PeriodicWorkRequestBuilder<StatusWorker>(
             15, TimeUnit.MINUTES
@@ -124,6 +126,7 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    // Solicita permisos básicos antes de configurar las geocercas.
     private fun requestMonitoringPermissionsOrSetupGeofences() {
         if (!locationPermissionManager.hasPreciseLocationPermission()) {
             locationPermissionLauncher.launch(
@@ -135,6 +138,7 @@ class MainActivity : ComponentActivity() {
         requestBackgroundLocationPermissionOrSetupGeofences()
     }
 
+    // Solicita ubicación en segundo plano cuando el sistema la exige.
     private fun requestBackgroundLocationPermissionOrSetupGeofences() {
         val backgroundPermission = locationPermissionManager.getBackgroundLocationPermission()
 
@@ -153,6 +157,7 @@ class MainActivity : ComponentActivity() {
         setupGeofences()
     }
 
+    // Solicita permiso para mostrar notificaciones en Android reciente.
     private fun requestNotificationPermissionIfNeeded(): Boolean {
         return if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -166,6 +171,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Inicia el seguimiento de ubicación si hay permisos suficientes.
     private fun startLocationTrackingIfPossible() {
         if (!locationPermissionManager.hasPreciseLocationPermission()) {
             Log.w(TAG, "Tracking de ubicacion no iniciado: falta ubicacion precisa")
@@ -175,6 +181,7 @@ class MainActivity : ComponentActivity() {
         LocationTrackingService.start(this)
     }
 
+    // Carga las geocercas del perfil activo en el sistema.
     private fun setupGeofences() {
         wearStatusController.updateLocationPermissionStatus()
 
@@ -207,6 +214,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Sincroniza las zonas locales con las geocercas de Android.
     private suspend fun actualizarGeofencingEnAndroid(zonas: List<ZonaSeguraEntity>) {
         val safeZones = zonas.map { zona ->
             SafeZoneGeofence(

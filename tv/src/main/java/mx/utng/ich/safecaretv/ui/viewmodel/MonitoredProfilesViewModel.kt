@@ -33,10 +33,12 @@ class MonitoredProfilesViewModel(
         }
     }
 
+    // Carga los perfiles monitoreados para la pantalla principal.
     fun loadProfiles() {
         refreshProfiles(showLoading = true)
     }
 
+    // Actualiza los perfiles y controla el indicador de carga.
     private fun refreshProfiles(showLoading: Boolean) {
         viewModelScope.launch {
             if (showLoading) {

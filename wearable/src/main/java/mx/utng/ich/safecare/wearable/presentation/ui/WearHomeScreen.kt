@@ -59,6 +59,7 @@ import mx.utng.ich.safecare.designsystem.theme.surfaceContainerLowestLight
 import mx.utng.ich.safecare.wearable.presentation.theme.SafeCareTheme
 
 @Composable
+// Muestra el estado del reloj y el acceso a la alerta SOS.
 fun WearHomeScreen(
     uiState: WearHomeUiState = WearHomeUiState(),
     onPanicButtonLongPress: () -> Unit = {}
@@ -137,6 +138,7 @@ fun WearHomeScreen(
 }
 
 @Composable
+// Muestra el botón SOS animado para activar una alerta.
 private fun SosPulseButton(
     text: String,
     ringScale: Float,
@@ -204,6 +206,7 @@ private fun SosPulseButton(
 }
 
 @Composable
+// Muestra instrucciones breves para usar la alerta SOS.
 private fun PanicInstructions() {
     Text(
         text = buildAnnotatedString {
@@ -227,6 +230,7 @@ private fun PanicInstructions() {
 }
 
 @Composable
+// Muestra el indicador compacto del estado de monitoreo.
 private fun StatusPill() {
     Row(
         modifier = Modifier
@@ -280,6 +284,7 @@ private fun StatusPill() {
 @WearPreviewDevices
 @WearPreviewFontScales
 @Composable
+// Genera una vista previa de la pantalla principal Wear.
 fun WearHomeScreenPreview() {
     WearHomeScreen()
 }

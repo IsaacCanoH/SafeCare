@@ -29,6 +29,7 @@ class WearStatusController(
 
     private var currentUiState = WearHomeUiState()
 
+    // Actualiza en la interfaz el estado de los permisos de ubicación.
     fun updateLocationPermissionStatus() {
         updateUiState(
             currentUiState.copy(
@@ -38,6 +39,7 @@ class WearStatusController(
         )
     }
 
+    // Genera y publica una alerta SOS con la ubicación disponible.
     fun onPanicButtonPressed(
         onRequestLocationPermission: (Array<String>) -> Unit
     ) {
@@ -113,6 +115,7 @@ class WearStatusController(
         }
     }
 
+    // Solicita permisos o inicia la lectura de ubicación actual.
     fun requestPermissionOrGetLocation(
         onRequestLocationPermission: (Array<String>) -> Unit
     ) {
@@ -136,6 +139,7 @@ class WearStatusController(
         }
     }
 
+    // Continúa el flujo de ubicación tras responder a los permisos.
     fun handleLocationPermissionResult(
         permissions: Map<String, Boolean>
     ) {
@@ -167,6 +171,7 @@ class WearStatusController(
         }
     }
 
+    // Lee y publica el estado actual del reloj.
     private fun updateDeviceStatus() {
         val deviceStatus = deviceStatusReader.getDeviceStatus()
 
@@ -181,6 +186,7 @@ class WearStatusController(
         )
     }
 
+    // Solicita la ubicación actual para actualizar la interfaz.
     private fun getCurrentLocation() {
         wearLocationReader.getCurrentLocation { updatedLocationText ->
 
@@ -194,6 +200,7 @@ class WearStatusController(
         }
     }
 
+    // Actualiza el estado observable que consume la interfaz Wear.
     private fun updateUiState(
         newUiState: WearHomeUiState
     ) {

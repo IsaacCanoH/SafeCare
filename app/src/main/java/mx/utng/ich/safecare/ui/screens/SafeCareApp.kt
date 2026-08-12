@@ -49,6 +49,7 @@ enum class Screen {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
+// Coordina la navegación, el estado y las pantallas de la app móvil.
 fun SafeCareApp() {
     val context = LocalContext.current
     val authViewModel: AuthViewModel = viewModel {
@@ -84,6 +85,7 @@ fun SafeCareApp() {
     val allZones by zoneViewModel.zones.collectAsState() // Obtenemos todas las zonas
     val alerts by alertViewModel.alerts.collectAsState()
 
+    // Recarga perfiles y zonas para actualizar la configuración visible.
     suspend fun refreshConfiguration() {
         if (isRefreshing) return
         isRefreshing = true

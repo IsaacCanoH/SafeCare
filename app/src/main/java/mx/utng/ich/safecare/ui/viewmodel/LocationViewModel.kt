@@ -23,6 +23,7 @@ class LocationViewModel(
     val latestLocationsByProfile: StateFlow<Map<String, LatestProfileLocation>> = _latestLocationsByProfile
     private var realtimeJob: Job? = null
 
+    // Recarga la última ubicación de cada perfil monitoreado.
     fun refreshLocations(): Job? {
         val caregiverId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: return null
         return viewModelScope.launch {
@@ -31,6 +32,7 @@ class LocationViewModel(
         }
     }
 
+    // Se suscribe a cambios remotos para mantener ubicaciones actualizadas.
     fun startRealtimeUpdates() {
         if (realtimeJob != null) return
         val caregiverId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: return

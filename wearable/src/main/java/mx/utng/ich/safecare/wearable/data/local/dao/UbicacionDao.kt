@@ -11,9 +11,11 @@ import mx.utng.ich.safecare.wearable.data.local.entity.UbicacionEntity
 interface UbicacionDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    // Guarda una ubicación en la base local del reloj.
     suspend fun insertar(ubicacion: UbicacionEntity): Long
 
     @Query("SELECT * FROM Ubicacion ORDER BY fechaHora DESC")
+    // Obtiene las ubicaciones guardadas localmente.
     suspend fun obtenerTodas(): List<UbicacionEntity>
 
     @Query(
@@ -26,8 +28,10 @@ interface UbicacionDao {
         )
         """
     )
+    // Conserva solo las ubicaciones locales más recientes.
     suspend fun conservarSoloRegistrosRecientes(maxRecords: Int)
 
     @Query("DELETE FROM Ubicacion")
+    // Elimina todas las ubicaciones guardadas en el reloj.
     suspend fun eliminarTodas()
 }

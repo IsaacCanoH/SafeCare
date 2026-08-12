@@ -20,6 +20,7 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+// Muestra el formulario para modificar un perfil monitoreado.
 fun EditProfileScreen(
     profile: PerfilMonitoreadoEntity,
     viewModel: ProfileViewModel,

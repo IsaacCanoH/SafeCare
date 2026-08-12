@@ -56,6 +56,7 @@ import mx.utng.ich.safecare.designsystem.theme.surfaceContainerLowestLight
 import mx.utng.ich.safecare.wearable.presentation.theme.SafeCareTheme
 
 @Composable
+// Muestra los datos y la acción de cierre de una alerta Wear.
 fun WearAlertScreen(
     message: String = "Saliste de zona segura",
     address: String = "Zona segura",
@@ -148,6 +149,7 @@ fun WearAlertScreen(
 }
 
 @Composable
+// Muestra el icono central que identifica una alerta activa.
 private fun AlertShieldIcon(
     modifier: Modifier = Modifier,
     color: Color
@@ -199,6 +201,7 @@ private fun AlertShieldIcon(
 }
 
 @Composable
+// Muestra un dato compacto dentro del detalle de alerta.
 private fun AlertDetailPill(
     text: String,
     isCustomAlert: Boolean
@@ -245,6 +248,7 @@ private fun AlertDetailPill(
 }
 
 @Composable
+// Muestra el botón para confirmar el cierre de la alerta.
 private fun DismissButton(onDismiss: () -> Unit) {
     Box(
         modifier = Modifier
@@ -269,6 +273,7 @@ private fun DismissButton(onDismiss: () -> Unit) {
 
 @WearPreviewDevices
 @Composable
+// Genera una vista previa de la pantalla de alerta Wear.
 fun WearAlertScreenPreview() {
     WearAlertScreen(
         address = "Av. Siempre Viva 123, Col. Centro, Ciudad"
