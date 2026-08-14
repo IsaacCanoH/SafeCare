@@ -18,6 +18,7 @@ import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import mx.utng.ich.safecare.wearable.data.datalayer.WearIdentityStore
 import mx.utng.ich.safecare.wearable.data.local.SafeCareProfileResolver
 import mx.utng.ich.safecare.wearable.data.local.database.DatabaseProvider
 import mx.utng.ich.safecare.wearable.data.local.entity.ZonaSeguraEntity
@@ -198,7 +199,12 @@ class MainActivity : ComponentActivity() {
         geofenceSetupJob?.cancel()
         geofenceSetupJob = lifecycleScope.launch {
             val database = DatabaseProvider.getDatabase(this@MainActivity)
-            val idPerfil = SafeCareProfileResolver.resolveProfileId(database)
+            val watchId = WearIdentityStore(this@MainActivity).getOrCreateWatchId()
+            val idPerfil = SafeCareProfileResolver.resolveProfileId(database, watchId) ?: run {
+                Log.w(TAG, "No se registraron geocercas: el reloj no tiene un perfil vinculado")
+                actualizarGeofencingEnAndroid(emptyList())
+                return@launch
+            }
             val zonasLocales = database.zonaSeguraDao().obtenerZonasActivas(idPerfil)
 
             actualizarGeofencingEnAndroid(zonasLocales)

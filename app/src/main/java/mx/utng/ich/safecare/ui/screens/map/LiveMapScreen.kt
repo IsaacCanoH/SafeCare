@@ -78,7 +78,8 @@ fun LiveMapScreen(
                     currentMap.addSafeZoneCircle(
                         GeoPoint(zone.latitudCentro, zone.longitudCentro),
                         zone.radioMetros,
-                        0x445A4699.toInt()
+                        0x445A4699.toInt(),
+                        zone.nombre
                     )
                 }
             currentMap.invalidate()

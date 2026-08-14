@@ -56,8 +56,13 @@ fun AlertsScreen(viewModel: AlertViewModel) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
-                items(alerts) { alert ->
-                    AlertItem(item = alert)
+                items(alerts, key = { it.alerta.idAlerta }) { alert ->
+                    AlertItem(
+                        item = alert,
+                        onAcknowledge = {
+                            viewModel.acknowledgeAlert(alert.alerta.idAlerta)
+                        }
+                    )
                 }
             }
         }
@@ -66,18 +71,73 @@ fun AlertsScreen(viewModel: AlertViewModel) {
 
 @Composable
 // Presenta la información principal de una alerta individual.
-fun AlertItem(item: AlertaConPerfil) {
+@OptIn(ExperimentalMaterial3Api::class)
+fun AlertItem(item: AlertaConPerfil, onAcknowledge: () -> Unit) {
+    if (item.alerta.estado != "ACTIVA") {
+        AlertCard(item)
+        return
+    }
+
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                onAcknowledge()
+            }
+            false
+        }
+    )
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = { AcknowledgeAlertBackground() },
+        enableDismissFromStartToEnd = false,
+        enableDismissFromEndToStart = true
+    ) {
+        AlertCard(item)
+    }
+}
+
+@Composable
+private fun AcknowledgeAlertBackground() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.primary)
+            .padding(end = 24.dp),
+        contentAlignment = Alignment.CenterEnd
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Reconocer",
+                color = MaterialTheme.colorScheme.onPrimary,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+private fun AlertCard(item: AlertaConPerfil) {
     val alert = item.alerta
     val sdf = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
     val dateStr = sdf.format(Date(alert.fechaHora))
+    val isActive = alert.estado == "ACTIVA"
     val isSos = alert.tipoAlerta == "SOS"
     val isCustomAlert = alert.tipoAlerta == "ALERTA"
     val accentColor = when {
+        !isActive -> MaterialTheme.colorScheme.outline
         isSos -> Color(0xFFC62828)
         isCustomAlert -> MaterialTheme.colorScheme.primary
         else -> Color(0xFFF9A825)
     }
     val containerColor = when {
+        !isActive -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
         isSos -> Color(0xFFFFEBEE)
         isCustomAlert -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
         else -> Color(0xFFFFF8E1)
@@ -127,6 +187,13 @@ fun AlertItem(item: AlertaConPerfil) {
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (!isActive) {
+                    Text(
+                        text = "Atendida",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             Text(text = dateStr, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)

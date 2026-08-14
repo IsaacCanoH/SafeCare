@@ -84,6 +84,7 @@ fun SafeCareApp() {
     val profiles by profileViewModel.profiles.collectAsState()
     val allZones by zoneViewModel.zones.collectAsState() // Obtenemos todas las zonas
     val alerts by alertViewModel.alerts.collectAsState()
+    val activeAlertsCount = alerts.count { it.alerta.estado == "ACTIVA" }
 
     // Recarga perfiles y zonas para actualizar la configuración visible.
     suspend fun refreshConfiguration() {
@@ -143,9 +144,22 @@ fun SafeCareApp() {
                                         Text(bottomNavTab, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                     }
                                 },
-                                navigationIcon = {
-                                    IconButton(onClick = { /* Drawer */ }) {
-                                        Icon(Icons.Default.Menu, contentDescription = null)
+                                actions = {
+                                    TextButton(
+                                        onClick = {
+                                            authViewModel.logout()
+                                            bottomNavTab = "Inicio"
+                                            selectedProfileIdForMap = null
+                                            currentRootScreen = Screen.LOGIN
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Logout,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("Cerrar sesión")
                                     }
                                 }
                             )
@@ -180,10 +194,10 @@ fun SafeCareApp() {
                                 icon = {
                                     BadgedBox(
                                         badge = {
-                                            if (alerts.isNotEmpty()) {
+                                            if (activeAlertsCount > 0) {
                                                 Badge(containerColor = Color(0xFFD32F2F)) {
                                                     Text(
-                                                        text = if (alerts.size > 99) "99+" else alerts.size.toString(),
+                                                        text = if (activeAlertsCount > 99) "99+" else activeAlertsCount.toString(),
                                                         color = Color.White
                                                     )
                                                 }

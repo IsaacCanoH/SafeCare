@@ -37,7 +37,9 @@ class AlertViewModel(
             _isLoading.value = true
             runCatching {
                 val profiles = repository.fetchProfilesForCaregiver(caregiverId).associateBy { it.idPerfil }
-                repository.fetchAlertsForCaregiver(caregiverId).map { AlertaConPerfil(it, profiles[it.idPerfil]?.nombre) }
+                repository.fetchAlertsForCaregiver(caregiverId)
+                    .map { AlertaConPerfil(it, profiles[it.idPerfil]?.nombre) }
+                    .sortedByDescending { it.alerta.fechaHora }
             }.onSuccess { _alerts.value = it }
             _isLoading.value = false
         }
@@ -62,6 +64,21 @@ class AlertViewModel(
         viewModelScope.launch {
             runCatching { channel.subscribe(blockUntilSubscribed = true) }
                 .onFailure { exception -> Log.e(TAG, "Realtime alerts subscribe", exception) }
+        }
+    }
+
+    // Reconoce una alerta para ocultarla de los avisos pendientes en todos los dispositivos.
+    fun acknowledgeAlert(alertId: String) {
+        viewModelScope.launch {
+            runCatching {
+                check(repository.acknowledgeAlert(alertId)) {
+                    "No se pudo reconocer la alerta"
+                }
+            }.onSuccess {
+                refreshAlerts()?.join()
+            }.onFailure { exception ->
+                Log.e(TAG, "Acknowledge alert", exception)
+            }
         }
     }
 

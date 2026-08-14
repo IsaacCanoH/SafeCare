@@ -54,6 +54,15 @@ class AuthViewModel(
         }
     }
 
+    // Cierra la sesión local y remota del cuidador.
+    fun logout() {
+        viewModelScope.launch {
+            runCatching { SupabaseClient.client.auth.signOut() }
+                .onFailure { error -> Log.e("AuthVM", "Logout Error", error) }
+            _authState.value = AuthState.Idle
+        }
+    }
+
     // Crea la cuenta y guarda el perfil del nuevo cuidador.
     fun register(name: String, email: String, pass: String) {
         viewModelScope.launch {
