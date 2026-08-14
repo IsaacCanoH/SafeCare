@@ -393,6 +393,894 @@ tv/
 
 8. Para probar las zonas seguras, configurar una ubicación dentro y otra fuera del radio definido en el emulador Wear OS. Al salir de la zona segura, la aplicación debe generar una alerta y vibrar.
 
+## Documentación del código
+
+Esta sección presenta los fragmentos de código más relevantes del proyecto, organizados por módulo y en el orden recomendado de revisión: punto de entrada → pantalla/controlador → servicios → repositorio/datos. Cada bloque incluye los comentarios de documentación que aparecen en el código fuente.
+
+---
+
+### Módulo Wear OS — `wearable`
+
+#### 1. `MainActivity.kt` — Punto de entrada del reloj
+
+Gestiona permisos, programa el trabajo periódico con WorkManager y registra las geocercas al iniciar.
+
+```kotlin
+class MainActivity : ComponentActivity() {
+
+    private lateinit var wearStatusController: WearStatusController
+    private lateinit var geofenceManager: GeofenceManager
+
+    // Inicializa la app del reloj y prepara el monitoreo.
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        wearStatusController =
+            WearStatusController(this) { updatedUiState ->
+                uiState = updatedUiState
+            }
+        geofenceManager = GeofenceManager(this)
+
+        wearStatusController.updateLocationPermissionStatus()
+        setupPeriodicMonitoring()
+
+        setContent {
+            WearHomeScreen(
+                uiState = uiState,
+                onPanicButtonLongPress = {
+                    wearStatusController.onPanicButtonPressed { permissions ->
+                        locationPermissionLauncher.launch(permissions)
+                    }
+                }
+            )
+        }
+
+        requestMonitoringPermissionsOrSetupGeofences()
+    }
+
+    // Programa la actualización periódica del estado del reloj.
+    private fun setupPeriodicMonitoring() {
+        val monitorWorkRequest = PeriodicWorkRequestBuilder<StatusWorker>(
+            15, TimeUnit.MINUTES
+        ).build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "SafeCareMonitor",
+            ExistingPeriodicWorkPolicy.KEEP,
+            monitorWorkRequest
+        )
+    }
+
+    // Carga las geocercas del perfil activo en el sistema.
+    private fun setupGeofences() {
+        geofenceSetupJob?.cancel()
+        geofenceSetupJob = lifecycleScope.launch {
+            val database = DatabaseProvider.getDatabase(this@MainActivity)
+            val watchId = WearIdentityStore(this@MainActivity).getOrCreateWatchId()
+            val idPerfil = SafeCareProfileResolver.resolveProfileId(database, watchId) ?: run {
+                actualizarGeofencingEnAndroid(emptyList())
+                return@launch
+            }
+            val zonasLocales = database.zonaSeguraDao().obtenerZonasActivas(idPerfil)
+            actualizarGeofencingEnAndroid(zonasLocales)
+        }
+    }
+
+    // Sincroniza las zonas locales con las geocercas de Android.
+    private suspend fun actualizarGeofencingEnAndroid(zonas: List<ZonaSeguraEntity>) {
+        val safeZones = zonas.map { zona ->
+            SafeZoneGeofence(
+                id = zona.idZona,
+                lat = zona.latitudCentro,
+                lng = zona.longitudCentro,
+                radiusInMeters = zona.radioMetros.toFloat()
+            )
+        }
+        geofenceManager.replaceGeofences(safeZones)
+            .onSuccess { count -> Log.i(TAG, "Geocercas activas confirmadas: $count") }
+            .onFailure { exception -> Log.e(TAG, "Fallo al activar geocercas", exception) }
+    }
+}
+```
+
+---
+
+#### 2. `WearStatusController.kt` — Orquestador de SOS y estado de la UI
+
+Coordina el botón SOS, la lectura de batería/conectividad y la actualización del estado observable de la pantalla principal.
+
+```kotlin
+class WearStatusController(
+    private val context: Context,
+    private val onUiStateChange: (WearHomeUiState) -> Unit
+) {
+    private val locationPermissionManager = LocationPermissionManager(context)
+    private val wearLocationReader = WearLocationReader(context)
+    private val deviceStatusReader = DeviceStatusReader(context)
+    private val scope = CoroutineScope(Dispatchers.IO)
+
+    // Genera y publica una alerta SOS con la ubicación disponible.
+    fun onPanicButtonPressed(
+        onRequestLocationPermission: (Array<String>) -> Unit
+    ) {
+        if (locationPermissionManager.hasLocationPermission()) {
+            scope.launch {
+                val serialIdentificador = WearIdentityStore(context).getOrCreateWatchId()
+                val database = DatabaseProvider.getDatabase(context)
+                val idPerfil = SafeCareProfileResolver.resolveProfileId(
+                    database = database,
+                    watchId = serialIdentificador
+                ) ?: run {
+                    Log.e(TAG, "SOS descartado: el reloj no tiene un perfil vinculado")
+                    return@launch
+                }
+
+                val locationData = wearLocationReader.getCurrentLocationData()
+                val batteryLevel = deviceStatusReader.getBatteryLevel()
+                val isOnline = deviceStatusReader.isOnline()
+
+                // 1. Guardar localmente en Room
+                val alertaLocal = AlertaEntity(
+                    tipoAlerta = "SOS",
+                    descripcion = "El perfil monitoreado activó una alerta SOS desde su reloj",
+                    idPerfil = idPerfil,
+                    idUbicacion = localUbicacionId
+                )
+                database.alertaDao().insertar(alertaLocal)
+
+                // 2. Sincronizar con Supabase si hay red
+                if (isOnline) {
+                    SupabaseRepository().saveAlert(alertaLocal)
+                }
+            }
+        } else {
+            onRequestLocationPermission(locationPermissionManager.getLocationPermissions())
+        }
+    }
+
+    // Actualiza el estado observable que consume la interfaz Wear.
+    private fun updateUiState(newUiState: WearHomeUiState) {
+        currentUiState = newUiState
+        onUiStateChange(currentUiState)
+    }
+}
+```
+
+---
+
+#### 3. `LocationTrackingService.kt` — Servicio en primer plano de monitoreo
+
+Núcleo del rastreo continuo. Recibe actualizaciones GPS, las valida, las guarda en Room y las sincroniza con Supabase. También monitorea batería/conexión y refresca la configuración remota.
+
+```kotlin
+class LocationTrackingService : Service() {
+
+    private val locationListener = object : LocationListener {
+        // Procesa cada ubicación nueva recibida del proveedor GPS.
+        override fun onLocationChanged(location: Location) {
+            if (isUsableWatchGpsLocation(location)) {
+                saveLocation(location)
+            } else {
+                Log.w(TAG, "Lectura GPS descartada: provider=${location.provider}, " +
+                        "ageMs=${locationAgeMillis(location)}, accuracy=${location.accuracy}")
+            }
+        }
+    }
+
+    // Inicia el rastreo y mantiene el servicio activo.
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (!hasLocationPermission()) { stopSelf(); return START_NOT_STICKY }
+        startAsForegroundService()
+        startLocationUpdates()
+        startStatusMonitoring()
+        serviceScope.launch { synchronizeRemoteConfigurationIfDue(force = true) }
+        return START_STICKY
+    }
+
+    // Valida precisión y antigüedad de una ubicación GPS.
+    private fun isUsableWatchGpsLocation(location: Location): Boolean {
+        return location.provider == LocationManager.GPS_PROVIDER &&
+                location.latitude in -90.0..90.0 &&
+                location.longitude in -180.0..180.0 &&
+                locationAgeMillis(location) <= MAX_LOCATION_AGE_MILLIS &&
+                (!location.hasAccuracy() || location.accuracy <= MAX_ACCURACY_METERS)
+    }
+
+    // Guarda, sincroniza y publica la ubicación recibida.
+    private fun saveLocation(location: Location) {
+        serviceScope.launch {
+            val locationEntity = UbicacionEntity(
+                latitud = location.latitude,
+                longitud = location.longitude,
+                fechaHora = location.time.takeIf { it > 0L } ?: System.currentTimeMillis(),
+                idSmartwatch = WearIdentityStore(applicationContext).getOrCreateWatchId()
+            )
+            ubicacionDao.insertar(locationEntity)
+            safeZoneMonitor.evaluate(location)  // verificación de zona segura por GPS
+            if (deviceStatusReader.isOnline()) {
+                supabaseRepository.saveLocation(locationEntity)
+            }
+            ubicacionDao.conservarSoloRegistrosRecientes(MAX_LOCATION_RECORDS)
+        }
+    }
+
+    // Actualiza la configuración remota cuando corresponde sincronizarla.
+    private suspend fun synchronizeRemoteConfigurationIfDue(force: Boolean = false) {
+        val configuration = supabaseRepository.fetchLinkedConfiguration(watchId) ?: return
+        database.withTransaction {
+            database.perfilMonitoreadoDao().insertar(configuration.profile.copy(estadoActual = true))
+            database.zonaSeguraDao().eliminarPorPerfil(configuration.profile.idPerfil)
+            if (configuration.zones.isNotEmpty()) {
+                database.zonaSeguraDao().insertarZonas(configuration.zones)
+            }
+        }
+        safeZoneMonitor.reset(configuration.profile.idPerfil)
+        GeofenceManager(applicationContext).replaceGeofences(
+            configuration.zones.filter { it.activa }.map { zone ->
+                SafeZoneGeofence(id = zone.idZona, lat = zone.latitudCentro,
+                    lng = zone.longitudCentro, radiusInMeters = zone.radioMetros.toFloat())
+            }
+        )
+    }
+
+    companion object {
+        private const val LOCATION_INTERVAL_MILLIS = 5_000L     // Cada 5 segundos
+        private const val MAX_LOCATION_AGE_MILLIS  = 30_000L    // Máximo 30 s de antigüedad
+        private const val MAX_ACCURACY_METERS      = 200f        // Precisión máxima aceptada
+
+        // Inicia el servicio de rastreo desde cualquier contexto.
+        fun start(context: Context) {
+            val intent = Intent(context, LocationTrackingService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+    }
+}
+```
+
+---
+
+#### 4. `GeofenceManager.kt` — Registro de geocercas circulares
+
+Convierte las `ZonaSeguraEntity` activas en geocercas de Google Play Services, reemplazando el conjunto anterior completo en cada actualización.
+
+```kotlin
+data class SafeZoneGeofence(
+    val id: String,
+    val lat: Double,
+    val lng: Double,
+    val radiusInMeters: Float
+)
+
+class GeofenceManager(context: Context) {
+
+    @SuppressLint("MissingPermission")
+    // Reemplaza las geocercas del sistema por las zonas actuales.
+    suspend fun replaceGeofences(zones: List<SafeZoneGeofence>): Result<Int> =
+        withContext(Dispatchers.IO) {
+            try {
+                Tasks.await(geofencingClient.removeGeofences(geofencePendingIntent))
+
+                if (zones.isEmpty()) return@withContext Result.success(0)
+
+                val geofences = zones.map { zone ->
+                    Geofence.Builder()
+                        .setRequestId(zone.id)
+                        .setCircularRegion(zone.lat, zone.lng, zone.radiusInMeters)
+                        .setExpirationDuration(Geofence.NEVER_EXPIRE)
+                        .setTransitionTypes(
+                            Geofence.GEOFENCE_TRANSITION_EXIT or
+                                    Geofence.GEOFENCE_TRANSITION_ENTER
+                        )
+                        .setNotificationResponsiveness(10_000)
+                        .build()
+                }
+
+                val request = GeofencingRequest.Builder()
+                    .setInitialTrigger(
+                        GeofencingRequest.INITIAL_TRIGGER_ENTER or
+                                GeofencingRequest.INITIAL_TRIGGER_EXIT
+                    )
+                    .addGeofences(geofences)
+                    .build()
+
+                Tasks.await(geofencingClient.addGeofences(request, geofencePendingIntent))
+                Result.success(zones.size)
+            } catch (exception: Exception) {
+                Result.failure(exception)
+            }
+        }
+}
+```
+
+---
+
+#### 5. `SafeZoneMonitor.kt` — Verificación independiente de zona segura
+
+Complemento al sistema de geocercas de Google. Evalúa cada coordenada GPS recibida para detectar salidas de zona sin depender de una transición del sistema.
+
+```kotlin
+/**
+ * Verificación independiente de Google Geofencing.
+ *
+ * Se ejecuta con cada coordenada GPS producida por el propio reloj. De esta forma
+ * SafeCare no depende de que Fused Location/Geofencing entregue una transición.
+ */
+class SafeZoneMonitor(context: Context) {
+
+    // Evalúa si la ubicación actual salió de una zona segura.
+    suspend fun evaluate(location: Location) {
+        val zones = database.zonaSeguraDao().obtenerZonasActivas(profileId)
+
+        val containingZone = zones.firstOrNull { zone ->
+            distanceMeters(
+                location.latitude, location.longitude,
+                zone.latitudCentro, zone.longitudCentro
+            ) <= zone.radioMetros
+        }
+        val isInsideAnySafeZone = containingZone != null
+        val wasInside = preferences.getBoolean(stateKey, false)
+        preferences.edit().putBoolean(stateKey, isInsideAnySafeZone).apply()
+
+        if (isInsideAnySafeZone) {
+            if (!wasInside) SafeCareAlertNotifier.dismissSafeZoneExitNotification(appContext)
+            return
+        }
+
+        // Solo genera alerta si el estado cambió (estaba adentro o no había estado previo)
+        if (!hadPreviousState || wasInside) {
+            GeofenceBroadcastReceiver.handleSafeZoneExit(
+                context = appContext,
+                zoneLabel = nearestZoneLabel(location, zones),
+                triggeringLocation = location
+            )
+        }
+    }
+
+    // Calcula la distancia en metros entre dos coordenadas.
+    private fun distanceMeters(
+        latitude: Double, longitude: Double,
+        centerLatitude: Double, centerLongitude: Double
+    ): Float {
+        val result = FloatArray(1)
+        Location.distanceBetween(latitude, longitude, centerLatitude, centerLongitude, result)
+        return result[0]
+    }
+}
+```
+
+---
+
+#### 6. `GeofenceBroadcastReceiver.kt` — Receptor de transiciones de geocerca
+
+Recibe el `Intent` del sistema cuando se cruza una geocerca, filtra las salidas y delega la creación de alerta, vibración y pantalla de aviso.
+
+```kotlin
+class GeofenceBroadcastReceiver : BroadcastReceiver() {
+
+    // Atiende eventos del sistema cuando se cruza una geocerca.
+    override fun onReceive(context: Context, intent: Intent) {
+        val geofencingEvent = GeofencingEvent.fromIntent(intent) ?: return
+
+        if (geofencingEvent.geofenceTransition != Geofence.GEOFENCE_TRANSITION_EXIT) return
+
+        val zoneLabel = geofencingEvent.triggeringGeofences?.firstOrNull()?.requestId
+            ?.let { "Zona $it" }
+        val triggeringLocation = geofencingEvent.triggeringLocation
+
+        val pendingResult = goAsync()
+        handleSafeZoneExit(context.applicationContext, zoneLabel, triggeringLocation) {
+            pendingResult.finish()
+        }
+    }
+
+    companion object {
+        // Crea y publica la alerta cuando se sale de una zona segura.
+        fun handleSafeZoneExit(
+            context: Context,
+            zoneLabel: String?,
+            triggeringLocation: Location?,
+            onFinished: (() -> Unit)? = null
+        ) {
+            val receiver = GeofenceBroadcastReceiver()
+            val appContext = context.applicationContext
+
+            receiver.launchAlertActivity(appContext, zoneLabel, triggeringLocation)
+            SafeCareAlertNotifier.showSafeZoneExitNotification(appContext, zoneLabel, triggeringLocation)
+            receiver.triggerVibration(appContext)
+
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    receiver.saveSafeZoneExitAlert(appContext, triggeringLocation)
+                } finally {
+                    onFinished?.invoke()
+                }
+            }
+        }
+    }
+}
+```
+
+---
+
+#### 7. `AlertActivity.kt` — Pantalla de alerta sobre la pantalla bloqueada
+
+Se muestra al detectar un evento de seguridad. Permanece visible sobre el bloqueo de pantalla y activa una vibración de emergencia.
+
+```kotlin
+class AlertActivity : ComponentActivity() {
+
+    // Muestra y activa los recursos de una alerta urgente.
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        showAsPersistentFullScreenAlert()
+        startEmergencyVibration()
+
+        val message   = intent.getStringExtra(EXTRA_MESSAGE)    ?: "Saliste de zona segura"
+        val alertType = intent.getStringExtra(EXTRA_ALERT_TYPE) ?: "FUERA_ZONA_SEGURA"
+        val latitude  = intent.getDoubleExtra("EXTRA_LATITUDE",  Double.NaN)
+        val longitude = intent.getDoubleExtra("EXTRA_LONGITUDE", Double.NaN)
+
+        setContent { WearAlertScreen(message, displayAddress, alertType, onDismiss = { dismissAlert() }) }
+
+        if (hasCoordinates(latitude, longitude)) {
+            lifecycleScope.launch {
+                resolveAddressFromCoordinates(latitude, longitude)
+                    ?.let { displayAddress = it }
+            }
+        }
+    }
+
+    // Mantiene la alerta visible a pantalla completa sobre otras vistas.
+    private fun showAsPersistentFullScreenAlert() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        }
+        window.addFlags(
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+        )
+    }
+
+    // Inicia el patrón de vibración de emergencia.
+    private fun startEmergencyVibration() {
+        val pattern = longArrayOf(0, 500, 200, 500)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
+        }
+    }
+
+    // Convierte coordenadas de alerta en una dirección para mostrar.
+    private suspend fun resolveAddressFromCoordinates(lat: Double, lng: Double): String? =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val geocoder = Geocoder(this@AlertActivity, Locale.getDefault())
+                geocoder.getFromLocation(lat, lng, 1)?.firstOrNull()?.toDisplayAddress()
+            }.getOrNull()
+        }
+}
+```
+
+---
+
+#### 8. `SupabaseRepository.kt` (wearable) — Capa de acceso remoto del reloj
+
+Encapsula todas las operaciones de escritura y lectura que el reloj realiza sobre Supabase.
+
+```kotlin
+class SupabaseRepository {
+
+    // Sincroniza el estado actual del smartwatch con Supabase.
+    suspend fun updateSmartWatchStatus(
+        numeroSerie: String,
+        bateria: Int,
+        conexion: String
+    ): String? = withContext(Dispatchers.IO) {
+        try {
+            val updateData = buildJsonObject {
+                put("bateria", bateria)
+                put("conexion", conexion.lowercase())
+                put("ultimaConexion", System.currentTimeMillis())
+            }
+            client.postgrest["SmartWatch"].update(updateData) {
+                filter { eq("numeroSerie", numeroSerie) }
+            }
+            "success"
+        } catch (e: Exception) { null }
+    }
+
+    // Guarda la ubicación generada por el smartwatch en Supabase.
+    suspend fun saveLocation(location: UbicacionEntity): Boolean =
+        withContext(Dispatchers.IO) {
+            try {
+                val locationData = buildJsonObject {
+                    put("idUbicacion", location.idUbicacion)
+                    put("latitud",     location.latitud)
+                    put("longitud",    location.longitud)
+                    put("fechaHora",   location.fechaHora)
+                    put("idSmartwatch", location.idSmartwatch)
+                }
+                client.postgrest["Ubicacion"].upsert(locationData) {
+                    onConflict = "idUbicacion"
+                }
+                true
+            } catch (exception: Exception) { false }
+        }
+
+    // Guarda una alerta del smartwatch en Supabase.
+    suspend fun saveAlert(alert: AlertaEntity): Boolean =
+        withContext(Dispatchers.IO) {
+            try {
+                val alertData = buildJsonObject {
+                    put("idAlerta",   alert.idAlerta)
+                    put("tipoAlerta", alert.tipoAlerta)
+                    put("descripcion", alert.descripcion)
+                    put("fechaHora",  alert.fechaHora)
+                    put("estado",     alert.estado)
+                    put("idPerfil",   alert.idPerfil)
+                    alert.idUbicacion?.let { put("idUbicacion", it) }
+                }
+                client.postgrest["Alerta"].upsert(alertData) {
+                    onConflict = "idAlerta"
+                }
+                true
+            } catch (exception: Exception) { false }
+        }
+
+    // Obtiene la configuración remota vinculada a este reloj.
+    suspend fun fetchLinkedConfiguration(numeroSerie: String): LinkedConfiguration? =
+        withContext(Dispatchers.IO) {
+            try {
+                val profileId = client.postgrest["SmartWatch"]
+                    .select(Columns.list("idPerfil")) {
+                        filter { eq("numeroSerie", numeroSerie) }
+                    }.decodeList<WatchLinkRow>().firstOrNull()?.idPerfil ?: return@withContext null
+
+                val profile = client.postgrest["PerfilMonitoreado"].select {
+                    filter { eq("idPerfil", profileId) }
+                }.decodeList<ProfileRow>().firstOrNull() ?: return@withContext null
+
+                val zones = client.postgrest["ZonaSegura"].select {
+                    filter { eq("idPerfil", profileId) }
+                }.decodeList<SafeZoneRow>().map { row ->
+                    ZonaSeguraEntity(idZona = row.id, nombre = row.nombre,
+                        latitudCentro = row.latitudCentro, longitudCentro = row.longitudCentro,
+                        radioMetros = row.radioMetros, activa = row.activa, idPerfil = row.idPerfil)
+                }
+
+                LinkedConfiguration(profile = PerfilMonitoreadoEntity(/* ... */), zones = zones)
+            } catch (exception: Exception) { null }
+        }
+}
+```
+
+---
+
+#### 9. `StatusWorker.kt` — Trabajo periódico de respaldo (WorkManager)
+
+Se ejecuta cada 15 minutos para reportar batería, conectividad y una ubicación puntual a Supabase, incluso si el servicio principal de rastreo no está activo.
+
+```kotlin
+class StatusWorker(context: Context, params: WorkerParameters) :
+    CoroutineWorker(context, params) {
+
+    // Publica el estado del reloj y agenda su siguiente actualización.
+    override suspend fun doWork(): Result {
+        val reader    = DeviceStatusReader(applicationContext)
+        val watchId   = WearIdentityStore(applicationContext).getOrCreateWatchId()
+        val online    = reader.isOnline()
+        val repository = SupabaseRepository()
+
+        val status = SmartwatchEntity(
+            watchId, watchId,
+            reader.getBatteryLevel(),
+            if (online) "online" else "offline"
+        )
+        if (online) repository.updateSmartWatchStatus(watchId, status.bateria, status.conexion)
+
+        WearLocationReader(applicationContext).getCurrentLocationData()?.let { location ->
+            val entity = UbicacionEntity(
+                latitud = location.latitude,
+                longitud = location.longitude,
+                idSmartwatch = watchId
+            )
+            if (online) repository.saveLocation(entity)
+        }
+
+        return Result.success()
+    }
+}
+```
+
+---
+
+### Módulo móvil — `app`
+
+#### 10. `AlertViewModel.kt` — Alertas en tiempo real (Supabase Realtime)
+
+Se suscribe al canal Realtime de Supabase para recibir nuevas alertas al instante, las asocia con el nombre del perfil y permite enviar alertas personalizadas al reloj.
+
+```kotlin
+class AlertViewModel(
+    context: Context,
+    private val repository: SupabaseRepository = SupabaseRepository()
+) : ViewModel() {
+
+    private val _alerts = MutableStateFlow<List<AlertaConPerfil>>(emptyList())
+    val alerts: StateFlow<List<AlertaConPerfil>> = _alerts
+
+    // Carga las alertas junto con el nombre de cada perfil.
+    fun refreshAlerts(): Job? {
+        val caregiverId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: return null
+        return viewModelScope.launch {
+            val profiles = repository.fetchProfilesForCaregiver(caregiverId)
+                .associateBy { it.idPerfil }
+            repository.fetchAlertsForCaregiver(caregiverId)
+                .map { AlertaConPerfil(it, profiles[it.idPerfil]?.nombre) }
+                .sortedByDescending { it.alerta.fechaHora }
+                .also { _alerts.value = it }
+        }
+    }
+
+    // Escucha nuevas alertas remotas y refresca la pantalla.
+    fun startRealtimeUpdates() {
+        if (realtimeJob != null) return
+        val caregiverId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: return
+        val channel = SupabaseClient.client.channel("mobile-alerts-$caregiverId")
+        realtimeJob = viewModelScope.launch {
+            channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+                table = "Alerta"
+            }.collectLatest {
+                refreshAlerts()?.join()
+            }
+        }
+        viewModelScope.launch { channel.subscribe(blockUntilSubscribed = true) }
+    }
+
+    // Envía una alerta personalizada al reloj del perfil elegido.
+    fun sendCustomAlert(profileId: String, message: String, onResult: (Result<Unit>) -> Unit) {
+        viewModelScope.launch {
+            val result = runCatching {
+                val alert = AlertaEntity(tipoAlerta = "ALERTA", descripcion = message.trim(), idPerfil = profileId)
+                repository.saveAlert(alert)
+                val serial = repository.fetchWatchSerial(profileId) ?: error("Perfil sin reloj vinculado")
+                val watch  = wearRepository.discoverAvailableWatches()
+                    .firstOrNull { it.watchInstallationId == serial } ?: error("Reloj no disponible")
+                wearRepository.sendCustomAlert(watch.nodeId, alert).getOrThrow()
+            }
+            onResult(result)
+        }
+    }
+}
+```
+
+---
+
+#### 11. `LocationViewModel.kt` — Ubicaciones en tiempo real (Supabase Realtime)
+
+Mantiene el mapa actualizado combinando eventos Realtime del WebSocket con un refresco de respaldo cada 30 segundos.
+
+```kotlin
+class LocationViewModel(
+    private val repository: SupabaseRepository = SupabaseRepository()
+) : ViewModel() {
+
+    private val _latestLocationsByProfile =
+        MutableStateFlow<Map<String, LatestProfileLocation>>(emptyMap())
+    val latestLocationsByProfile: StateFlow<Map<String, LatestProfileLocation>> =
+        _latestLocationsByProfile
+
+    /**
+     * Mantiene el mapa actualizado con INSERT/UPDATE de Supabase Realtime. Un refresco
+     * ligero funciona como respaldo y también recupera el estado tras una desconexión.
+     */
+    fun startRealtimeUpdates() {
+        realtimeJob = viewModelScope.launch {
+            launch { collectRealtimeLocations(caregiverId) }
+            launch {
+                while (isActive) {
+                    delay(FALLBACK_REFRESH_MILLIS)  // 30 segundos
+                    refreshLocations()?.join()
+                }
+            }
+        }
+    }
+
+    /** Aplica solo la nueva fila recibida; no descarga el historial de Ubicacion. */
+    private suspend fun applyRealtimeLocation(action: PostgresAction) {
+        val row = when (action) {
+            is PostgresAction.Insert -> action.decodeRecordOrNull<RealtimeLocationRow>()
+            is PostgresAction.Update -> action.decodeRecordOrNull<RealtimeLocationRow>()
+            else -> null
+        } ?: return
+
+        val profileId = profileIdByWatchId[row.watchId]
+        val current   = _latestLocationsByProfile.value[profileId]
+        if (current != null && current.fechaHora > row.timestamp) return
+
+        val location = LatestProfileLocation(
+            idPerfil    = profileId!!,
+            latitud     = row.latitude,
+            longitud    = row.longitude,
+            fechaHora   = row.timestamp,
+            idSmartwatch = row.watchId
+        )
+        _latestLocationsByProfile.value =
+            _latestLocationsByProfile.value + (profileId to location)
+    }
+
+    companion object {
+        const val FALLBACK_REFRESH_MILLIS  = 30_000L  // Refresco de respaldo
+        const val RECONNECT_DELAY_MILLIS   =  5_000L  // Espera antes de reconectar Realtime
+    }
+}
+```
+
+---
+
+#### 12. `SafeZoneViewModel.kt` — Gestión de zonas seguras
+
+Administra el ciclo completo de zonas seguras: carga, búsqueda de dirección con Nominatim (OpenStreetMap), creación, edición y cambio de estado.
+
+```kotlin
+class SafeZoneViewModel(
+    context: Context,
+    private val repository: SupabaseRepository = SupabaseRepository()
+) : ViewModel() {
+
+    // Carga las zonas seguras de los perfiles del cuidador.
+    fun loadZones(): Job? {
+        val userId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: return null
+        return viewModelScope.launch {
+            runCatching { repository.fetchSafeZonesForCaregiver(userId) }
+                .onSuccess { _zones.value = it }
+        }
+    }
+
+    // Busca direcciones y devuelve sus coordenadas en el mapa.
+    fun searchLocation(query: String) {
+        if (query.length < 3) { _searchResults.value = emptyList(); return }
+        searchJob = viewModelScope.launch {
+            delay(600)   // espera 600 ms para no hacer peticiones por cada tecla
+            val url = "https://nominatim.openstreetmap.org/search?format=json&q=${URLEncoder.encode(query, "UTF-8")}"
+            val json = JSONArray(URL(url).openConnection().getInputStream().bufferedReader().readText())
+            _searchResults.value = List(json.length()) { i ->
+                json.getJSONObject(i).let {
+                    it.getString("display_name") to GeoPoint(it.getDouble("lat"), it.getDouble("lon"))
+                }
+            }
+        }
+    }
+
+    // Crea una zona segura con las coordenadas seleccionadas.
+    fun addZone(nombre: String, lat: Double, lng: Double, radio: Double, idPerfil: String,
+                onComplete: (Boolean) -> Unit) = viewModelScope.launch {
+        val success = runCatching {
+            repository.createSafeZone(UUID.randomUUID().toString(), nombre, lat, lng, radio, idPerfil)
+        }.getOrDefault(false)
+        if (success) loadZones()?.join()
+        onComplete(success)
+    }
+
+    // Cambia el estado activo de una zona segura.
+    fun toggleZoneStatus(zone: ZonaSeguraEntity, newStatus: Boolean) = viewModelScope.launch {
+        if (repository.toggleSafeZoneStatus(zone.idZona, newStatus)) loadZones()
+    }
+}
+```
+
+---
+
+### Módulo Android TV — `tv`
+
+#### 13. `TvAlertsViewModel.kt` — Sondeo periódico de alertas
+
+Consulta Supabase cada 5 segundos para priorizar SOS y mostrar alertas en pantalla completa.
+
+```kotlin
+class TvAlertsViewModel : ViewModel() {
+    private val repository = TvAlertsRepository()
+    private val _activeAlert = MutableStateFlow<TvAlert?>(null)
+    val activeAlert = _activeAlert.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            while (isActive) {
+                refresh()
+                delay(5_000)   // Sondeo cada 5 segundos
+            }
+        }
+    }
+
+    // Reconoce la alerta actual en Supabase para retirarla de todos los dispositivos.
+    fun acknowledge() {
+        _activeAlert.value?.let { alert ->
+            viewModelScope.launch {
+                runCatching { repository.acknowledgeAlert(alert.id) }
+                    .onSuccess { _activeAlert.value = null; refresh() }
+            }
+        }
+    }
+
+    // Recarga la alerta más reciente desde el repositorio.
+    private suspend fun refresh() {
+        runCatching { repository.getActiveAlerts() }
+            .onSuccess { alerts ->
+                val currentAlert       = _activeAlert.value
+                val currentStillActive = currentAlert?.let { a -> alerts.firstOrNull { it.id == a.id } }
+                val newestAlert        = alerts.firstOrNull()
+                _activeAlert.value = when {
+                    currentStillActive == null                              -> newestAlert
+                    newestAlert?.isSos == true && !currentStillActive.isSos -> newestAlert
+                    else                                                    -> currentStillActive
+                }
+            }
+    }
+}
+```
+
+---
+
+#### 14. `MonitoredProfilesViewModel.kt` (TV) — Perfiles con ubicación en tiempo real
+
+Combina carga inicial desde Supabase, suscripción Realtime a la tabla `Ubicacion` y un refresco de respaldo cada 30 segundos para mantener el panel de TV siempre actualizado.
+
+```kotlin
+sealed interface ProfilesUiState {
+    data object Loading : ProfilesUiState
+    data class Content(val profiles: List<MonitoredProfile>) : ProfilesUiState
+    data class Error(val message: String) : ProfilesUiState
+}
+
+class MonitoredProfilesViewModel(
+    private val repository: MonitoredProfilesRepository = MonitoredProfilesRepository()
+) : ViewModel() {
+
+    init {
+        loadProfiles()
+        viewModelScope.launch {
+            // Respaldo: mantiene perfiles/zonas/estado correctos si se perdió algún evento.
+            while (isActive) {
+                delay(FALLBACK_REFRESH_MILLIS)
+                refreshProfiles(showLoading = false)
+            }
+        }
+        startRealtimeLocationUpdates()
+    }
+
+    /** Actualiza en memoria únicamente el perfil dueño de la nueva coordenada. */
+    private fun applyRealtimeLocation(action: PostgresAction) {
+        val row = when (action) {
+            is PostgresAction.Insert -> action.decodeRecordOrNull<TvRealtimeLocationRow>()
+            is PostgresAction.Update -> action.decodeRecordOrNull<TvRealtimeLocationRow>()
+            else -> null
+        } ?: return
+
+        val content  = _state.value as? ProfilesUiState.Content ?: return
+        val profiles = content.profiles.map { profile ->
+            if (row.watchId !in profile.watchIds ||
+                (profile.locationTimestamp != null && profile.locationTimestamp > row.timestamp)) {
+                profile
+            } else {
+                profile.copy(
+                    latitude          = row.latitude,
+                    longitude         = row.longitude,
+                    locationTimestamp = row.timestamp
+                )
+            }
+        }
+        if (profiles != content.profiles) _state.value = ProfilesUiState.Content(profiles)
+    }
+}
+```
+
+---
+
 ## Capturas de pantalla
 
 <!-- Agregar aquí las capturas de la pantalla principal, botón SOS, alerta de zona segura, ubicación y ejecución en el emulador Wear OS. -->
