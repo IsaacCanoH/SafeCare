@@ -20,7 +20,10 @@ data class ZonaSeguraEntity(
     val longitudCentro: Double,
     val radioMetros: Double,
     val activa: Boolean = true,
-    val idPerfil: String
+    // Se conserva como perfil principal por compatibilidad con datos anteriores.
+    val idPerfil: String,
+    // Una zona puede estar asignada a varios perfiles monitoreados.
+    val idPerfiles: Set<String> = setOf(idPerfil)
 )
 
 data class SmartwatchEntity(

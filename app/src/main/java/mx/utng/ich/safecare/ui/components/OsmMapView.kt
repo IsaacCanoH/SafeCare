@@ -57,6 +57,7 @@ fun OsmMapView(
 }
 
 // Agrega un marcador simple en las coordenadas indicadas.
+// Los marcadores deben agregarse despuÃ©s de los perÃ­metros para quedar por encima de ellos.
 fun MapView.addSimpleMarker(point: GeoPoint, title: String) {
     val marker = Marker(this)
     marker.position = point

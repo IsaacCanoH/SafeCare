@@ -248,9 +248,7 @@ fun SafeCareApp() {
                                         connection = "WiFi",
                                         lastUpdate = "Ahora",
                                         isInSafeZone = true,
-                                        // Busca todas las zonas seguras globales que pertenezcan a este cuidador
-                                        // (Simplificado: mostramos todas las zonas guardadas)
-                                        safeZonesCount = allZones.size 
+                                        safeZonesCount = allZones.count { profile.idPerfil in it.idPerfiles }
                                     )
                                 },
                                 onAddPersonClick = { bottomNavTab = "AgregarPerfil" },
@@ -283,6 +281,7 @@ fun SafeCareApp() {
                                 selectedZoneForEdit?.let { zone ->
                                     EditSafeZoneScreen(
                                         zone = zone,
+                                        profiles = profiles,
                                         viewModel = zoneViewModel,
                                         onBackClick = { bottomNavTab = "Zonas" },
                                         onSaveSuccess = { bottomNavTab = "Zonas" }

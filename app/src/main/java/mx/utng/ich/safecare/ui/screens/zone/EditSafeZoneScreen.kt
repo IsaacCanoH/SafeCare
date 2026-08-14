@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import mx.utng.ich.safecare.data.local.entity.ZonaSeguraEntity
+import mx.utng.ich.safecare.data.local.entity.PerfilMonitoreadoEntity
 import mx.utng.ich.safecare.ui.components.OsmMapView
 import mx.utng.ich.safecare.ui.components.addSafeZoneCircle
 import mx.utng.ich.safecare.ui.viewmodel.SafeZoneViewModel
@@ -34,6 +35,7 @@ import kotlinx.coroutines.launch
 // Permite modificar la ubicación y radio de una zona segura.
 fun EditSafeZoneScreen(
     zone: ZonaSeguraEntity,
+    profiles: List<PerfilMonitoreadoEntity> = emptyList(),
     viewModel: SafeZoneViewModel,
     onBackClick: () -> Unit = {},
     onSaveSuccess: () -> Unit = {}
@@ -42,6 +44,9 @@ fun EditSafeZoneScreen(
     var radius by remember { mutableFloatStateOf(zone.radioMetros.toFloat()) }
     var centerPoint by remember { mutableStateOf(GeoPoint(zone.latitudCentro, zone.longitudCentro)) }
     var searchQuery by remember { mutableStateOf("") }
+    var selectedProfileIds by remember(zone.idZona, profiles) {
+        mutableStateOf(zone.idPerfiles.intersect(profiles.map { it.idPerfil }.toSet()))
+    }
     
     val searchResults by viewModel.searchResults.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -81,7 +86,25 @@ fun EditSafeZoneScreen(
                             if (zoneName.isBlank()) {
                                 scope.launch { snackbarHostState.showSnackbar("Ingresa un nombre para la zona") }
                             } else {
-                                viewModel.updateZone(zone.idZona, zoneName, centerPoint.latitude, centerPoint.longitude, radius.toDouble(), zone.idPerfil) { success ->
+                                val selectedProfiles = profiles
+                                    .filter { it.idPerfil in selectedProfileIds }
+                                    .map { it.idPerfil }
+                                if (selectedProfiles.isEmpty()) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            "Selecciona al menos un perfil monitoreado"
+                                        )
+                                    }
+                                    return@TextButton
+                                }
+                                viewModel.updateZone(
+                                    zone.idZona,
+                                    zoneName,
+                                    centerPoint.latitude,
+                                    centerPoint.longitude,
+                                    radius.toDouble(),
+                                    selectedProfiles
+                                ) { success ->
                                     if (success) onSaveSuccess()
                                     else scope.launch { snackbarHostState.showSnackbar("Error al actualizar") }
                                 }
@@ -191,6 +214,13 @@ fun EditSafeZoneScreen(
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(text = "Editar detalles", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+
+                    ProfileMultiSelectDropdown(
+                        profiles = profiles,
+                        selectedProfileIds = selectedProfileIds,
+                        onSelectionChange = { selectedProfileIds = it },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    )
                     
                     OutlinedTextField(
                         value = zoneName,

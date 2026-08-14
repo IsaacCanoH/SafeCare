@@ -61,18 +61,11 @@ fun LiveMapScreen(
         mapView?.let { currentMap ->
             currentMap.overlays.clear()
 
-            displayedProfiles.forEach { profile ->
-                latestLocations[profile.idPerfil]?.let { location ->
-                    currentMap.addSimpleMarker(
-                        GeoPoint(location.latitud, location.longitud),
-                        profile.nombre
-                    )
-                }
-            }
-
+            // OsmDroid dibuja encima los overlays agregados al final. Primero se dibujan
+            // los perÃ­metros y al final los marcadores para que sigan siendo visibles y tocables.
             zones
                 .filter { zone ->
-                    zone.activa && displayedProfiles.any { it.idPerfil == zone.idPerfil }
+                    zone.activa && displayedProfiles.any { it.idPerfil in zone.idPerfiles }
                 }
                 .forEach { zone ->
                     currentMap.addSafeZoneCircle(
@@ -82,6 +75,14 @@ fun LiveMapScreen(
                         zone.nombre
                     )
                 }
+            displayedProfiles.forEach { profile ->
+                latestLocations[profile.idPerfil]?.let { location ->
+                    currentMap.addSimpleMarker(
+                        GeoPoint(location.latitud, location.longitud),
+                        profile.nombre
+                    )
+                }
+            }
             currentMap.invalidate()
         }
     }
