@@ -216,7 +216,8 @@ class LocationTrackingService : Service() {
             return
         }
 
-        val idPerfil = currentStatus?.idPerfil ?: SafeCareProfileResolver.resolveProfileId(database)
+        val idPerfil = SafeCareProfileResolver.resolveProfileId(database, serialNumber)
+            ?: currentStatus?.idPerfil
         val status = SmartwatchEntity(
                 idSmartwatch = serialNumber,
                 numeroSerie = serialNumber,

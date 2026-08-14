@@ -53,7 +53,13 @@ class WearStatusController(
             scope.launch {
                 val serialIdentificador = WearIdentityStore(context).getOrCreateWatchId()
                 val database = DatabaseProvider.getDatabase(context)
-                val idPerfil = SafeCareProfileResolver.resolveProfileId(database)
+                val idPerfil = SafeCareProfileResolver.resolveProfileId(
+                    database = database,
+                    watchId = serialIdentificador
+                ) ?: run {
+                    Log.e(TAG, "SOS descartado: el reloj no tiene un perfil vinculado")
+                    return@launch
+                }
                 val profileName = database.perfilMonitoreadoDao()
                     .obtenerPorId(idPerfil)
                     ?.nombre

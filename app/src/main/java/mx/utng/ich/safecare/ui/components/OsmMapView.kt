@@ -13,7 +13,6 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polygon
-import org.osmdroid.views.overlay.infowindow.MarkerInfoWindow
 
 @Composable
 // Muestra un mapa de OpenStreetMap y entrega la vista ya configurada.
@@ -68,12 +67,18 @@ fun MapView.addSimpleMarker(point: GeoPoint, title: String) {
 }
 
 // Dibuja el perímetro circular de una zona segura.
-fun MapView.addSafeZoneCircle(center: GeoPoint, radiusInMeters: Double, color: Int) {
+fun MapView.addSafeZoneCircle(
+    center: GeoPoint,
+    radiusInMeters: Double,
+    color: Int,
+    title: String
+) {
     val circle = Polygon(this)
     circle.points = Polygon.pointsAsCircle(center, radiusInMeters)
     circle.fillPaint.color = color
     circle.outlinePaint.color = color
     circle.outlinePaint.strokeWidth = 2f
+    circle.title = title
     this.overlays.add(circle)
     this.invalidate()
 }

@@ -50,10 +50,15 @@ fun EditSafeZoneScreen(
 
     var mapViewInstance by remember { mutableStateOf<MapView?>(null) }
 
-    LaunchedEffect(radius, centerPoint, mapViewInstance) {
+    LaunchedEffect(zoneName, radius, centerPoint, mapViewInstance) {
         mapViewInstance?.let { mapView ->
             mapView.overlays.removeAll { it !is MapEventsOverlay }
-            mapView.addSafeZoneCircle(centerPoint, radius.toDouble(), 0x445A4699.toInt())
+            mapView.addSafeZoneCircle(
+                centerPoint,
+                radius.toDouble(),
+                0x445A4699.toInt(),
+                zoneName.ifBlank { "Zona segura" }
+            )
             mapView.invalidate()
         }
     }

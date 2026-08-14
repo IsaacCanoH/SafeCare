@@ -1,8 +1,7 @@
 package mx.utng.ich.safecaretv.ui.viewmodel
 
-import android.app.Application
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,9 +11,8 @@ import kotlinx.coroutines.launch
 import mx.utng.ich.safecaretv.data.alert.TvAlert
 import mx.utng.ich.safecaretv.data.alert.TvAlertsRepository
 
-class TvAlertsViewModel(application: Application) : AndroidViewModel(application) {
+class TvAlertsViewModel : ViewModel() {
     private val repository = TvAlertsRepository()
-    private val preferences = application.getSharedPreferences("tv_acknowledged_alerts", 0)
     private val _activeAlert = MutableStateFlow<TvAlert?>(null)
     val activeAlert = _activeAlert.asStateFlow()
 
@@ -27,11 +25,19 @@ class TvAlertsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    // Marca la alerta actual como atendida en la interfaz.
+    // Reconoce la alerta actual en Supabase para retirarla de todos los dispositivos.
     fun acknowledge() {
         _activeAlert.value?.let { alert ->
-            preferences.edit().putBoolean(alert.id, true).apply()
-            _activeAlert.value = null
+            viewModelScope.launch {
+                runCatching { repository.acknowledgeAlert(alert.id) }
+                    .onSuccess {
+                        _activeAlert.value = null
+                        refresh()
+                    }
+                    .onFailure { exception ->
+                        Log.e("TvAlerts", "Error acknowledging alert", exception)
+                    }
+            }
         }
     }
 
@@ -39,14 +45,15 @@ class TvAlertsViewModel(application: Application) : AndroidViewModel(application
     private suspend fun refresh() {
         runCatching { repository.getActiveAlerts() }
             .onSuccess { alerts ->
-                val nextAlert = alerts.firstOrNull {
-                    !preferences.getBoolean(it.id, false)
-                }
                 val currentAlert = _activeAlert.value
-                if (currentAlert == null ||
-                    (nextAlert?.isSos == true && !currentAlert.isSos)
-                ) {
-                    _activeAlert.value = nextAlert
+                val currentStillActive = currentAlert?.let { active ->
+                    alerts.firstOrNull { it.id == active.id }
+                }
+                val newestAlert = alerts.firstOrNull()
+                _activeAlert.value = when {
+                    currentStillActive == null -> newestAlert
+                    newestAlert?.isSos == true && !currentStillActive.isSos -> newestAlert
+                    else -> currentStillActive
                 }
             }
             .onFailure { Log.e("TvAlerts", "Error loading Supabase alerts", it) }

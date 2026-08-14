@@ -69,6 +69,22 @@ class SupabaseRepository {
         }
     }
 
+    // Marca una alerta como atendida para todos los dispositivos del cuidador.
+    suspend fun acknowledgeAlert(alertId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val updateData = buildJsonObject {
+                put("estado", "ATENDIDA")
+            }
+            client.postgrest["Alerta"].update(updateData) {
+                filter { eq("idAlerta", alertId) }
+            }
+            true
+        } catch (e: Exception) {
+            Log.e("SupabaseRepo", "Error acknowledging alert $alertId", e)
+            false
+        }
+    }
+
     // Registra los datos del cuidador en la base remota.
     suspend fun saveUser(usuario: UsuarioEntity): Boolean = withContext(Dispatchers.IO) {
         try {

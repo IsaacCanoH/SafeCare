@@ -82,7 +82,13 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         val alertaDao = database.alertaDao()
         val ubicacionDao = database.ubicacionDao()
         val smartwatchDao = database.smartwatchDao()
-        val idPerfil = SafeCareProfileResolver.resolveProfileId(database)
+        val idPerfil = SafeCareProfileResolver.resolveProfileId(
+            database = database,
+            watchId = serialIdentificador
+        ) ?: run {
+            Log.e(TAG, "Alerta de zona descartada: el reloj no tiene un perfil vinculado")
+            return
+        }
         val profileName = database.perfilMonitoreadoDao()
             .obtenerPorId(idPerfil)
             ?.nombre

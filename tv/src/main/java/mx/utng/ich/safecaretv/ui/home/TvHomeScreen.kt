@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sos
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.WifiOff
@@ -445,12 +444,6 @@ private fun DashboardHeader(
                 icon = Icons.Default.MusicNote,
                 onClick = onAlertTonesClick
             )
-            Spacer(Modifier.width(18.dp))
-            HeaderIconAction(
-                icon = Icons.Default.Settings,
-                contentDescription = "Configuración",
-                onClick = {}
-            )
             Spacer(Modifier.width(32.dp))
             Column(horizontalAlignment = Alignment.End) {
                 Text(
@@ -505,29 +498,6 @@ private fun HeaderAction(
             Spacer(Modifier.width(10.dp))
             Text(text, color = SafePurple, fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }
-    }
-}
-
-@Composable
-// Muestra una acción con icono en el encabezado de TV.
-private fun HeaderIconAction(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    contentDescription: String,
-    onClick: () -> Unit
-) {
-    var focused by remember { mutableStateOf(false) }
-    Box(
-        modifier = Modifier
-            .size(52.dp)
-            .scale(if (focused) 1.08f else 1f)
-            .onFocusChanged { focused = it.isFocused }
-            .clip(RoundedCornerShape(11.dp))
-            .background(if (focused) SafePurpleLight else Color.White)
-            .border(1.dp, Color(0xFFD9D6E2), RoundedCornerShape(11.dp))
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(icon, contentDescription = contentDescription, tint = SafeNavy)
     }
 }
 

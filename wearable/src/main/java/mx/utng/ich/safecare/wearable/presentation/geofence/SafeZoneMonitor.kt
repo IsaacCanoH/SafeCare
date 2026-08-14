@@ -3,6 +3,7 @@ package mx.utng.ich.safecare.wearable.presentation.geofence
 import android.content.Context
 import android.location.Location
 import android.util.Log
+import mx.utng.ich.safecare.wearable.data.datalayer.WearIdentityStore
 import mx.utng.ich.safecare.wearable.data.local.SafeCareProfileResolver
 import mx.utng.ich.safecare.wearable.data.local.database.DatabaseProvider
 
@@ -19,8 +20,11 @@ class SafeZoneMonitor(context: Context) {
     // Evalúa si la ubicación actual salió de una zona segura.
     suspend fun evaluate(location: Location) {
         val database = DatabaseProvider.getDatabase(appContext)
-        val profileId = SafeCareProfileResolver.resolveProfileId(database)
-        if (profileId.isBlank()) return
+        val watchId = WearIdentityStore(appContext).getOrCreateWatchId()
+        val profileId = SafeCareProfileResolver.resolveProfileId(database, watchId) ?: run {
+            Log.w(TAG, "No se evaluó la ubicación: el reloj no tiene un perfil vinculado")
+            return
+        }
 
         val zones = database.zonaSeguraDao().obtenerZonasActivas(profileId)
         if (zones.isEmpty()) {
