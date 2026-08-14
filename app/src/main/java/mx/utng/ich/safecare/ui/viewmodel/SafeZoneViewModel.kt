@@ -72,21 +72,55 @@ class SafeZoneViewModel(context: Context, private val repository: SupabaseReposi
     }
     // Borra los resultados de la búsqueda de ubicación.
     fun clearSearch() { _searchResults.value = emptyList() }
-    // Crea una zona segura con las coordenadas seleccionadas.
-    fun addZone(nombre: String, lat: Double, lng: Double, radio: Double, idPerfil: String, onComplete: (Boolean) -> Unit) = viewModelScope.launch {
+    // Crea una zona segura para uno o varios perfiles seleccionados.
+    fun addZone(
+        nombre: String,
+        lat: Double,
+        lng: Double,
+        radio: Double,
+        profileIds: List<String>,
+        onComplete: (Boolean) -> Unit
+    ) = viewModelScope.launch {
         _isLoading.value = true
-        val zone = ZonaSeguraEntity(nombre = nombre, latitudCentro = lat, longitudCentro = lng, radioMetros = radio, idPerfil = idPerfil)
+        val selectedProfiles = profileIds.distinct()
+        val primaryProfileId = selectedProfiles.firstOrNull()
+        if (primaryProfileId == null) {
+            _isLoading.value = false
+            onComplete(false)
+            return@launch
+        }
+        val zone = ZonaSeguraEntity(
+            nombre = nombre,
+            latitudCentro = lat,
+            longitudCentro = lng,
+            radioMetros = radio,
+            idPerfil = primaryProfileId,
+            idPerfiles = selectedProfiles.toSet()
+        )
         val success = runCatching {
-            repository.createSafeZone(zone.idZona, nombre, lat, lng, radio, idPerfil)
+            repository.createSafeZone(zone.idZona, nombre, lat, lng, radio, selectedProfiles)
         }.getOrDefault(false)
         if (success) loadZones()?.join()
         _isLoading.value = false
         onComplete(success)
     }
     // Guarda los cambios de una zona segura existente.
-    fun updateZone(idZona: String, nombre: String, lat: Double, lng: Double, radio: Double, idPerfil: String, onComplete: (Boolean) -> Unit) = viewModelScope.launch {
-        val success = repository.updateSafeZone(idZona, nombre, lat, lng, radio)
-        if (success) loadZones(); onComplete(success)
+    fun updateZone(
+        idZona: String,
+        nombre: String,
+        lat: Double,
+        lng: Double,
+        radio: Double,
+        profileIds: List<String>,
+        onComplete: (Boolean) -> Unit
+    ) = viewModelScope.launch {
+        _isLoading.value = true
+        val success = runCatching {
+            repository.updateSafeZone(idZona, nombre, lat, lng, radio, profileIds.distinct())
+        }.getOrDefault(false)
+        if (success) loadZones()?.join()
+        _isLoading.value = false
+        onComplete(success)
     }
     // Cambia el estado activo de una zona segura.
     fun toggleZoneStatus(zone: ZonaSeguraEntity, newStatus: Boolean) = viewModelScope.launch {

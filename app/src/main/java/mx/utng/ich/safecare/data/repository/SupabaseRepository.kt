@@ -8,6 +8,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.put
 import mx.utng.ich.safecare.data.remote.SupabaseClient
 import mx.utng.ich.safecare.data.local.entity.UsuarioEntity
@@ -210,26 +212,20 @@ class SupabaseRepository {
         }
     }
 
-    // Crea una zona segura para el perfil seleccionado.
+    // Crea una zona segura y sus relaciones con los perfiles seleccionados de forma atÃ³mica.
     suspend fun createSafeZone(
         idZona: String,
         nombre: String,
         lat: Double,
         lng: Double,
         radio: Double,
-        idPerfil: String
+        profileIds: List<String>
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            val zoneJson = buildJsonObject {
-                put("idZona", idZona)
-                put("nombre", nombre)
-                put("latitudCentro", lat)
-                put("longitudCentro", lng)
-                put("radioMetros", radio)
-                put("idPerfil", idPerfil)
-                put("activa", true)
-            }
-            client.postgrest["ZonaSegura"].insert(zoneJson)
+            client.postgrest.rpc(
+                "create_safe_zone_with_profiles",
+                safeZoneMutationParameters(idZona, nombre, lat, lng, radio, profileIds)
+            )
             true
         } catch (e: Exception) {
             Log.e("SupabaseRepo", "Error creating zone: ${e.message}")
@@ -244,21 +240,13 @@ class SupabaseRepository {
         lat: Double,
         lng: Double,
         radio: Double,
-        activa: Boolean? = null
+        profileIds: List<String>
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            val zoneJson = buildJsonObject {
-                put("nombre", nombre)
-                put("latitudCentro", lat)
-                put("longitudCentro", lng)
-                put("radioMetros", radio)
-                activa?.let { put("activa", it) }
-            }
-            client.postgrest["ZonaSegura"].update(zoneJson) {
-                filter {
-                    eq("idZona", idZona)
-                }
-            }
+            client.postgrest.rpc(
+                "update_safe_zone_with_profiles",
+                safeZoneMutationParameters(idZona, nombre, lat, lng, radio, profileIds)
+            )
             true
         } catch (e: Exception) {
             Log.e("SupabaseRepo", "Error updating zone: ${e.message}")
@@ -326,7 +314,7 @@ class SupabaseRepository {
             }
         }
 
-    // Obtiene las zonas seguras de los perfiles del cuidador.
+    // Obtiene cada zona una vez, con todos los perfiles del cuidador a los que estÃ¡ asignada.
     suspend fun fetchSafeZonesForCaregiver(caregiverId: String): List<ZonaSeguraEntity> =
         withContext(Dispatchers.IO) {
             val profileIds = client.postgrest["PerfilMonitoreado"].select(Columns.list("idPerfil")) {
@@ -334,8 +322,17 @@ class SupabaseRepository {
             }.decodeList<ProfileIdRow>().map(ProfileIdRow::id)
             if (profileIds.isEmpty()) return@withContext emptyList()
 
-            client.postgrest["ZonaSegura"].select {
+            val assignments = client.postgrest["ZonaSeguraPerfil"].select {
                 filter { isIn("idPerfil", profileIds) }
+            }.decodeList<SafeZoneProfileRow>()
+            if (assignments.isEmpty()) return@withContext emptyList()
+
+            val profileIdsByZone = assignments
+                .groupBy(SafeZoneProfileRow::zoneId)
+                .mapValues { (_, values) -> values.map(SafeZoneProfileRow::profileId).toSet() }
+
+            client.postgrest["ZonaSegura"].select {
+                filter { isIn("idZona", profileIdsByZone.keys.toList()) }
             }.decodeList<SafeZoneRow>().map { row ->
                 ZonaSeguraEntity(
                     idZona = row.id,
@@ -344,7 +341,8 @@ class SupabaseRepository {
                     longitudCentro = row.longitudCentro,
                     radioMetros = row.radioMetros,
                     activa = row.activa,
-                    idPerfil = row.idPerfil
+                    idPerfil = row.idPerfil,
+                    idPerfiles = profileIdsByZone[row.id].orEmpty()
                 )
             }
         }
@@ -466,6 +464,12 @@ class SupabaseRepository {
     )
 
     @Serializable
+    private data class SafeZoneProfileRow(
+        @SerialName("idZona") val zoneId: String,
+        @SerialName("idPerfil") val profileId: String
+    )
+
+    @Serializable
     private data class AlertRow(
         @SerialName("idAlerta") val id: String,
         @SerialName("tipoAlerta") val tipoAlerta: String,
@@ -494,4 +498,22 @@ class SupabaseRepository {
         @SerialName("fechaHora") val fechaHora: Long,
         @SerialName("idSmartwatch") val idSmartwatch: String
     )
+
+    private fun safeZoneMutationParameters(
+        idZona: String,
+        nombre: String,
+        latitud: Double,
+        longitud: Double,
+        radio: Double,
+        profileIds: List<String>
+    ) = buildJsonObject {
+        put("p_id_zona", idZona)
+        put("p_nombre", nombre)
+        put("p_latitud", latitud)
+        put("p_longitud", longitud)
+        put("p_radio", radio)
+        put("p_id_perfiles", buildJsonArray {
+            profileIds.distinct().forEach { add(JsonPrimitive(it)) }
+        })
+    }
 }

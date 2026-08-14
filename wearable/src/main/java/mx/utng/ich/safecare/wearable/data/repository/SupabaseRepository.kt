@@ -108,9 +108,17 @@ class SupabaseRepository {
                     filter { eq("idPerfil", profileId) }
                 }.decodeList<ProfileRow>().firstOrNull() ?: return@withContext null
 
-                val zones = client.postgrest["ZonaSegura"].select {
+                val zoneIds = client.postgrest["ZonaSeguraPerfil"].select {
                     filter { eq("idPerfil", profileId) }
-                }.decodeList<SafeZoneRow>().map { row ->
+                }.decodeList<SafeZoneProfileRow>().map(SafeZoneProfileRow::zoneId)
+
+                val zones = if (zoneIds.isEmpty()) {
+                    emptyList()
+                } else {
+                    client.postgrest["ZonaSegura"].select {
+                        filter { isIn("idZona", zoneIds) }
+                    }.decodeList<SafeZoneRow>()
+                }.map { row ->
                     ZonaSeguraEntity(
                         idZona = row.id,
                         nombre = row.nombre,
@@ -118,7 +126,7 @@ class SupabaseRepository {
                         longitudCentro = row.longitudCentro,
                         radioMetros = row.radioMetros,
                         activa = row.activa,
-                        idPerfil = row.idPerfil
+                        idPerfil = profileId
                     )
                 }
 
@@ -165,6 +173,11 @@ class SupabaseRepository {
         @SerialName("radioMetros") val radioMetros: Double,
         val activa: Boolean = true,
         @SerialName("idPerfil") val idPerfil: String
+    )
+
+    @Serializable
+    private data class SafeZoneProfileRow(
+        @SerialName("idZona") val zoneId: String
     )
 }
 

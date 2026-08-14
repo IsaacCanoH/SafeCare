@@ -33,17 +33,36 @@ class MonitoredProfilesRepository {
                 filter { isIn("idPerfil", profileIds) }
             }.decodeList<WatchRow>()
         }
-        val zonesDeferred = async {
-            client.postgrest["ZonaSegura"].select {
-                filter {
-                    isIn("idPerfil", profileIds)
-                    eq("activa", true)
-                }
-            }.decodeList<SafeZoneRow>()
+        val zoneLinksDeferred = async {
+            client.postgrest["ZonaSeguraPerfil"].select {
+                filter { isIn("idPerfil", profileIds) }
+            }.decodeList<SafeZoneProfileRow>()
         }
 
         val watches = watchesDeferred.await()
-        val zones = zonesDeferred.await()
+        val zoneLinks = zoneLinksDeferred.await()
+        val zones = if (zoneLinks.isEmpty()) {
+            emptyList()
+        } else {
+            val zoneData = client.postgrest["ZonaSegura"].select {
+                filter {
+                    isIn("idZona", zoneLinks.map(SafeZoneProfileRow::zoneId).distinct())
+                    eq("activa", true)
+                }
+            }.decodeList<SafeZoneDataRow>().associateBy(SafeZoneDataRow::zoneId)
+
+            zoneLinks.mapNotNull { link ->
+                zoneData[link.zoneId]?.let { zone ->
+                    SafeZoneRow(
+                        name = zone.name,
+                        latitude = zone.latitude,
+                        longitude = zone.longitude,
+                        radiusMeters = zone.radiusMeters,
+                        profileId = link.profileId
+                    )
+                }
+            }
+        }
         val watchIds = watches
             .flatMap { listOfNotNull(it.id, it.serialNumber) }
             .distinct()
@@ -161,12 +180,26 @@ private data class WatchRow(
 )
 
 @Serializable
-private data class SafeZoneRow(
+private data class SafeZoneDataRow(
+    @SerialName("idZona") val zoneId: String,
     @SerialName("nombre") val name: String,
     @SerialName("latitudCentro") val latitude: Double,
     @SerialName("longitudCentro") val longitude: Double,
-    @SerialName("radioMetros") val radiusMeters: Double,
+    @SerialName("radioMetros") val radiusMeters: Double
+)
+
+@Serializable
+private data class SafeZoneProfileRow(
+    @SerialName("idZona") val zoneId: String,
     @SerialName("idPerfil") val profileId: String
+)
+
+private data class SafeZoneRow(
+    val name: String,
+    val latitude: Double,
+    val longitude: Double,
+    val radiusMeters: Double,
+    val profileId: String
 )
 
 @Serializable
