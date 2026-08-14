@@ -1,12 +1,43 @@
 -- Una zona segura puede corresponder a muchos perfiles y un perfil a muchas zonas.
--- Se mantiene ZonaSegura.idPerfil para conservar compatibilidad con instalaciones anteriores;
--- la fuente de verdad para las asignaciones es ZonaSeguraPerfil.
+-- Los identificadores se detectan desde las tablas existentes: algunos proyectos los
+-- almacenan como text y otros como uuid.
 
-CREATE TABLE IF NOT EXISTS public."ZonaSeguraPerfil" (
-    "idZona" uuid NOT NULL REFERENCES public."ZonaSegura"("idZona") ON DELETE CASCADE,
-    "idPerfil" uuid NOT NULL REFERENCES public."PerfilMonitoreado"("idPerfil") ON DELETE CASCADE,
-    PRIMARY KEY ("idZona", "idPerfil")
-);
+DO $$
+DECLARE
+    zone_id_type text;
+    profile_id_type text;
+BEGIN
+    SELECT pg_catalog.format_type(attribute.atttypid, attribute.atttypmod)
+    INTO zone_id_type
+    FROM pg_catalog.pg_attribute attribute
+    WHERE attribute.attrelid = 'public."ZonaSegura"'::regclass
+      AND attribute.attname = 'idZona'
+      AND attribute.attnum > 0
+      AND NOT attribute.attisdropped;
+
+    SELECT pg_catalog.format_type(attribute.atttypid, attribute.atttypmod)
+    INTO profile_id_type
+    FROM pg_catalog.pg_attribute attribute
+    WHERE attribute.attrelid = 'public."PerfilMonitoreado"'::regclass
+      AND attribute.attname = 'idPerfil'
+      AND attribute.attnum > 0
+      AND NOT attribute.attisdropped;
+
+    IF zone_id_type IS NULL OR profile_id_type IS NULL THEN
+        RAISE EXCEPTION 'No se encontraron las columnas ZonaSegura.idZona o PerfilMonitoreado.idPerfil';
+    END IF;
+
+    EXECUTE format(
+        'CREATE TABLE IF NOT EXISTS public."ZonaSeguraPerfil" (
+            "idZona" %1$s NOT NULL REFERENCES public."ZonaSegura"("idZona") ON DELETE CASCADE,
+            "idPerfil" %2$s NOT NULL REFERENCES public."PerfilMonitoreado"("idPerfil") ON DELETE CASCADE,
+            PRIMARY KEY ("idZona", "idPerfil")
+        )',
+        zone_id_type,
+        profile_id_type
+    );
+END;
+$$;
 
 CREATE INDEX IF NOT EXISTS "idx_ZonaSeguraPerfil_idPerfil"
     ON public."ZonaSeguraPerfil" ("idPerfil");
@@ -27,37 +58,37 @@ TO authenticated
 USING (
     EXISTS (
         SELECT 1
-        FROM public."PerfilMonitoreado" perfil
-        WHERE perfil."idPerfil" = "ZonaSeguraPerfil"."idPerfil"
-          AND perfil."idCuidador" = auth.uid()
+        FROM public."PerfilMonitoreado" profile
+        WHERE profile."idPerfil" = "ZonaSeguraPerfil"."idPerfil"
+          AND profile."idCuidador"::text = auth.uid()::text
     )
 );
 
 GRANT SELECT ON public."ZonaSeguraPerfil" TO authenticated;
 
--- Si se elimina el perfil que antes fungÃ­a como propietario de una zona compartida,
--- se conserva la zona y se usa otro perfil asignado como referencia de compatibilidad.
+-- Si se elimina el perfil propietario de una zona compartida, se conserva la zona
+-- y se usa otro perfil asignado como referencia de compatibilidad.
 CREATE OR REPLACE FUNCTION public.reassign_safe_zones_before_profile_delete()
 RETURNS trigger
 LANGUAGE plpgsql
 SET search_path = public, pg_temp
 AS $$
 BEGIN
-    WITH reemplazos AS (
-        SELECT DISTINCT ON (zona."idZona")
-            zona."idZona",
-            asignacion."idPerfil"
-        FROM public."ZonaSegura" zona
-        JOIN public."ZonaSeguraPerfil" asignacion
-            ON asignacion."idZona" = zona."idZona"
-        WHERE zona."idPerfil" = OLD."idPerfil"
-          AND asignacion."idPerfil" <> OLD."idPerfil"
-        ORDER BY zona."idZona", asignacion."idPerfil"
+    WITH replacements AS (
+        SELECT DISTINCT ON (zone."idZona")
+            zone."idZona",
+            assignment."idPerfil"
+        FROM public."ZonaSegura" zone
+        JOIN public."ZonaSeguraPerfil" assignment
+            ON assignment."idZona" = zone."idZona"
+        WHERE zone."idPerfil" = OLD."idPerfil"
+          AND assignment."idPerfil" <> OLD."idPerfil"
+        ORDER BY zone."idZona", assignment."idPerfil"
     )
-    UPDATE public."ZonaSegura" zona
-    SET "idPerfil" = reemplazos."idPerfil"
-    FROM reemplazos
-    WHERE zona."idZona" = reemplazos."idZona";
+    UPDATE public."ZonaSegura" zone
+    SET "idPerfil" = replacements."idPerfil"
+    FROM replacements
+    WHERE zone."idZona" = replacements."idZona";
 
     RETURN OLD;
 END;
@@ -70,19 +101,31 @@ BEFORE DELETE ON public."PerfilMonitoreado"
 FOR EACH ROW
 EXECUTE FUNCTION public.reassign_safe_zones_before_profile_delete();
 
+-- Si se intentÃ³ una versiÃ³n anterior de esta migraciÃ³n, evita dejar funciones
+-- sobrecargadas que PostgREST no pueda resolver desde los parÃ¡metros JSON.
+DROP FUNCTION IF EXISTS public.create_safe_zone_with_profiles(
+    uuid, text, double precision, double precision, double precision, uuid[]
+);
+DROP FUNCTION IF EXISTS public.update_safe_zone_with_profiles(
+    uuid, text, double precision, double precision, double precision, uuid[]
+);
+
 CREATE OR REPLACE FUNCTION public.create_safe_zone_with_profiles(
-    p_id_zona uuid,
+    p_id_zona text,
     p_nombre text,
     p_latitud double precision,
     p_longitud double precision,
     p_radio double precision,
-    p_id_perfiles uuid[]
+    p_id_perfiles text[]
 )
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
+DECLARE
+    zone_id_type text;
+    profile_id_type text;
 BEGIN
     IF auth.uid() IS NULL THEN
         RAISE EXCEPTION 'Debes iniciar sesiÃ³n para crear una zona segura';
@@ -94,42 +137,65 @@ BEGIN
 
     IF EXISTS (
         SELECT 1
-        FROM unnest(p_id_perfiles) AS seleccionado("idPerfil")
-        LEFT JOIN public."PerfilMonitoreado" perfil
-            ON perfil."idPerfil" = seleccionado."idPerfil"
-        WHERE perfil."idPerfil" IS NULL
-           OR perfil."idCuidador" <> auth.uid()
+        FROM unnest(p_id_perfiles) AS selected("idPerfil")
+        LEFT JOIN public."PerfilMonitoreado" profile
+            ON profile."idPerfil"::text = selected."idPerfil"
+        WHERE profile."idPerfil" IS NULL
+           OR profile."idCuidador"::text <> auth.uid()::text
     ) THEN
         RAISE EXCEPTION 'No puedes asignar zonas a perfiles de otro cuidador';
     END IF;
 
-    INSERT INTO public."ZonaSegura" (
-        "idZona", "nombre", "latitudCentro", "longitudCentro", "radioMetros", "activa", "idPerfil"
-    ) VALUES (
-        p_id_zona, p_nombre, p_latitud, p_longitud, p_radio, true, p_id_perfiles[1]
-    );
+    SELECT pg_catalog.format_type(attribute.atttypid, attribute.atttypmod)
+    INTO zone_id_type
+    FROM pg_catalog.pg_attribute attribute
+    WHERE attribute.attrelid = 'public."ZonaSegura"'::regclass
+      AND attribute.attname = 'idZona'
+      AND attribute.attnum > 0
+      AND NOT attribute.attisdropped;
 
-    INSERT INTO public."ZonaSeguraPerfil" ("idZona", "idPerfil")
-    SELECT p_id_zona, DISTINCT_PROFILE."idPerfil"
-    FROM (
-        SELECT DISTINCT "idPerfil" FROM unnest(p_id_perfiles) AS perfiles("idPerfil")
-    ) AS DISTINCT_PROFILE;
+    SELECT pg_catalog.format_type(attribute.atttypid, attribute.atttypmod)
+    INTO profile_id_type
+    FROM pg_catalog.pg_attribute attribute
+    WHERE attribute.attrelid = 'public."PerfilMonitoreado"'::regclass
+      AND attribute.attname = 'idPerfil'
+      AND attribute.attnum > 0
+      AND NOT attribute.attisdropped;
+
+    EXECUTE format(
+        'INSERT INTO public."ZonaSegura" (
+            "idZona", "nombre", "latitudCentro", "longitudCentro", "radioMetros", "activa", "idPerfil"
+        ) VALUES ($1::%1$s, $2, $3, $4, $5, true, ($6)[1]::%2$s)',
+        zone_id_type,
+        profile_id_type
+    ) USING p_id_zona, p_nombre, p_latitud, p_longitud, p_radio, p_id_perfiles;
+
+    EXECUTE format(
+        'INSERT INTO public."ZonaSeguraPerfil" ("idZona", "idPerfil")
+         SELECT $1::%1$s, profile."idPerfil"
+         FROM public."PerfilMonitoreado" profile
+         WHERE profile."idPerfil"::text = ANY($2::text[])',
+        zone_id_type
+    ) USING p_id_zona, p_id_perfiles;
 END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.update_safe_zone_with_profiles(
-    p_id_zona uuid,
+    p_id_zona text,
     p_nombre text,
     p_latitud double precision,
     p_longitud double precision,
     p_radio double precision,
-    p_id_perfiles uuid[]
+    p_id_perfiles text[]
 )
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
+DECLARE
+    zone_id_type text;
+    profile_id_type text;
 BEGIN
     IF auth.uid() IS NULL THEN
         RAISE EXCEPTION 'Debes iniciar sesiÃ³n para actualizar una zona segura';
@@ -141,46 +207,72 @@ BEGIN
 
     IF NOT EXISTS (
         SELECT 1
-        FROM public."ZonaSeguraPerfil" asignacion
-        JOIN public."PerfilMonitoreado" perfil
-            ON perfil."idPerfil" = asignacion."idPerfil"
-        WHERE asignacion."idZona" = p_id_zona
-          AND perfil."idCuidador" = auth.uid()
+        FROM public."ZonaSeguraPerfil" assignment
+        JOIN public."PerfilMonitoreado" profile
+            ON profile."idPerfil" = assignment."idPerfil"
+        WHERE assignment."idZona"::text = p_id_zona
+          AND profile."idCuidador"::text = auth.uid()::text
     ) THEN
         RAISE EXCEPTION 'No tienes permiso para actualizar esta zona';
     END IF;
 
     IF EXISTS (
         SELECT 1
-        FROM unnest(p_id_perfiles) AS seleccionado("idPerfil")
-        LEFT JOIN public."PerfilMonitoreado" perfil
-            ON perfil."idPerfil" = seleccionado."idPerfil"
-        WHERE perfil."idPerfil" IS NULL
-           OR perfil."idCuidador" <> auth.uid()
+        FROM unnest(p_id_perfiles) AS selected("idPerfil")
+        LEFT JOIN public."PerfilMonitoreado" profile
+            ON profile."idPerfil"::text = selected."idPerfil"
+        WHERE profile."idPerfil" IS NULL
+           OR profile."idCuidador"::text <> auth.uid()::text
     ) THEN
         RAISE EXCEPTION 'No puedes asignar zonas a perfiles de otro cuidador';
     END IF;
 
-    UPDATE public."ZonaSegura"
-    SET "nombre" = p_nombre,
-        "latitudCentro" = p_latitud,
-        "longitudCentro" = p_longitud,
-        "radioMetros" = p_radio,
-        "idPerfil" = p_id_perfiles[1]
-    WHERE "idZona" = p_id_zona;
+    SELECT pg_catalog.format_type(attribute.atttypid, attribute.atttypmod)
+    INTO zone_id_type
+    FROM pg_catalog.pg_attribute attribute
+    WHERE attribute.attrelid = 'public."ZonaSegura"'::regclass
+      AND attribute.attname = 'idZona'
+      AND attribute.attnum > 0
+      AND NOT attribute.attisdropped;
 
-    DELETE FROM public."ZonaSeguraPerfil"
-    WHERE "idZona" = p_id_zona;
+    SELECT pg_catalog.format_type(attribute.atttypid, attribute.atttypmod)
+    INTO profile_id_type
+    FROM pg_catalog.pg_attribute attribute
+    WHERE attribute.attrelid = 'public."PerfilMonitoreado"'::regclass
+      AND attribute.attname = 'idPerfil'
+      AND attribute.attnum > 0
+      AND NOT attribute.attisdropped;
 
-    INSERT INTO public."ZonaSeguraPerfil" ("idZona", "idPerfil")
-    SELECT p_id_zona, DISTINCT_PROFILE."idPerfil"
-    FROM (
-        SELECT DISTINCT "idPerfil" FROM unnest(p_id_perfiles) AS perfiles("idPerfil")
-    ) AS DISTINCT_PROFILE;
+    EXECUTE format(
+        'UPDATE public."ZonaSegura"
+         SET "nombre" = $2,
+             "latitudCentro" = $3,
+             "longitudCentro" = $4,
+             "radioMetros" = $5,
+             "idPerfil" = ($6)[1]::%1$s
+         WHERE "idZona" = $1::%2$s',
+        profile_id_type,
+        zone_id_type
+    ) USING p_id_zona, p_nombre, p_latitud, p_longitud, p_radio, p_id_perfiles;
+
+    EXECUTE format(
+        'DELETE FROM public."ZonaSeguraPerfil" WHERE "idZona" = $1::%s',
+        zone_id_type
+    ) USING p_id_zona;
+
+    EXECUTE format(
+        'INSERT INTO public."ZonaSeguraPerfil" ("idZona", "idPerfil")
+         SELECT $1::%1$s, profile."idPerfil"
+         FROM public."PerfilMonitoreado" profile
+         WHERE profile."idPerfil"::text = ANY($2::text[])',
+        zone_id_type
+    ) USING p_id_zona, p_id_perfiles;
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.create_safe_zone_with_profiles(uuid, text, double precision, double precision, double precision, uuid[])
+GRANT EXECUTE ON FUNCTION public.create_safe_zone_with_profiles(text, text, double precision, double precision, double precision, text[])
     TO authenticated;
-GRANT EXECUTE ON FUNCTION public.update_safe_zone_with_profiles(uuid, text, double precision, double precision, double precision, uuid[])
+GRANT EXECUTE ON FUNCTION public.update_safe_zone_with_profiles(text, text, double precision, double precision, double precision, text[])
     TO authenticated;
+
+NOTIFY pgrst, 'reload schema';
