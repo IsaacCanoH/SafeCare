@@ -14,10 +14,20 @@ sealed interface TvAuthState {
     data object CheckingSession : TvAuthState
     data object SignedOut : TvAuthState
     data object Loading : TvAuthState
+    /**
+     * Estado de autenticaciÃ³n que indica que el usuario ha iniciado sesiÃ³n correctamente.
+     */
     data class SignedIn(val email: String) : TvAuthState
+    /**
+     * Estado de UI que representa un error ocurrido durante la carga de datos.
+     */
     data class Error(val message: String) : TvAuthState
 }
 
+/**
+ * Manejador del flujo de autenticaciÃ³n optimizado para TV (ej. autenticaciÃ³n mediante cÃ³digo PIN o cÃ³digo QR).
+ *  * Elimina la fricciÃ³n de introducir texto largo, facilitando un inicio de sesiÃ³n fluido en pantallas no tÃ¡ctiles.
+ */
 class TvAuthViewModel : ViewModel() {
     private val _state = MutableStateFlow<TvAuthState>(TvAuthState.CheckingSession)
     val state: StateFlow<TvAuthState> = _state.asStateFlow()

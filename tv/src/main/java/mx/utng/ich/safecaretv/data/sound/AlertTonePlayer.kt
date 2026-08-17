@@ -4,6 +4,10 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 
+/**
+ * Componente de audio encargado de la reproducciÃ³n de tonos de alerta en el dispositivo mÃ³vil.
+ *  * Maneja los ciclos de vida de reproducciÃ³n del sonido, asegurando que las alarmas crÃ­ticas suenen a los niveles de volumen adecuados, incluso en modos restrictivos.
+ */
 class AlertTonePlayer(private val context: Context) {
     private var mediaPlayer: MediaPlayer? = null
 

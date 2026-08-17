@@ -22,6 +22,11 @@ import mx.utng.ich.safecare.wearable.presentation.geofence.SafeZoneGeofence
 import mx.utng.ich.safecare.wearable.presentation.geofence.SafeZoneMonitor
 import org.json.JSONObject
 
+/**
+ * Servicio principal encargado de escuchar y gestionar la comunicaciÃ³n bidireccional en la capa de datos (Data Layer) de Wear OS.
+ *  * Establece el puente de conexiÃ³n entre el dispositivo mÃ³vil (telÃ©fono) y el reloj inteligente (smartwatch).
+ *  * Facilita la sincronizaciÃ³n de estados vitales, recepciÃ³n de alertas de pÃ¡nico y actualizaciÃ³n de configuraciones en tiempo real y de forma transparente.
+ */
 class WearDataLayerService : WearableListenerService() {
     private val executor = Executors.newSingleThreadExecutor()
 

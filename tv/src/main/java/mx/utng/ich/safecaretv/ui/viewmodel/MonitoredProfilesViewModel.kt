@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.ui.viewmodel
+﻿package mx.utng.ich.safecaretv.ui.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -24,10 +24,20 @@ import mx.utng.ich.safecaretv.data.remote.TvSupabaseClient
 
 sealed interface ProfilesUiState {
     data object Loading : ProfilesUiState
+    /**
+     * Estado de UI que representa el contenido cargado exitosamente.
+     */
     data class Content(val profiles: List<mx.utng.ich.safecaretv.data.profile.MonitoredProfile>) : ProfilesUiState
+    /**
+     * Estado de UI que representa un error ocurrido durante la carga de datos.
+     */
     data class Error(val message: String) : ProfilesUiState
 }
 
+/**
+ * Componente arquitectÃ³nico (ViewModel) que maneja la lÃ³gica de negocio para la lista interactiva de perfiles.
+ *  * Retiene el estado de la vista durante los cambios de configuraciÃ³n y reacciona a los flujos de datos provenientes del repositorio.
+ */
 class MonitoredProfilesViewModel(
     private val repository: MonitoredProfilesRepository = MonitoredProfilesRepository()
 ) : ViewModel() {

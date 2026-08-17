@@ -26,6 +26,10 @@ import mx.utng.ich.safecare.wearable.presentation.location.WearLocationReader
 import mx.utng.ich.safecare.wearable.presentation.sensors.DeviceStatusReader
 import mx.utng.ich.safecare.wearable.data.repository.SupabaseRepository
 
+/**
+ * Receptor de eventos (BroadcastReceiver) a nivel de sistema que se activa automÃ¡ticamente al presentarse transiciones geogrÃ¡ficas.
+ *  * Responde instantÃ¡neamente cuando el usuario monitoreado entra o sale de los lÃ­mites fÃ­sicos de una zona segura establecida.
+ */
 class GeofenceBroadcastReceiver : BroadcastReceiver() {
 
     /** Atiende eventos del sistema cuando se cruza una geocerca. */

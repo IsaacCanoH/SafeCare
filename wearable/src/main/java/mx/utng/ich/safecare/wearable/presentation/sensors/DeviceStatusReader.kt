@@ -8,6 +8,10 @@ import android.net.NetworkCapabilities
 import android.os.BatteryManager
 import mx.utng.ich.safecare.wearable.presentation.data.DeviceStatus
 
+/**
+ * Servicio lector especializado en monitorear y recolectar continuamente el estado fÃ­sico y de conectividad del dispositivo.
+ *  * Proporciona el flujo de datos necesario para evaluar si el equipo se encuentra en condiciones Ã³ptimas para el monitoreo del paciente.
+ */
 class DeviceStatusReader(
     private val context: Context
 ) {

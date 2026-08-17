@@ -14,6 +14,10 @@ import com.google.android.gms.tasks.Tasks
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+/**
+ * Modelo matemÃ¡tico y de datos que representa una zona segura mediante coordenadas GPS centrales y un radio especÃ­fico.
+ *  * Define el perÃ­metro geogrÃ¡fico donde el paciente puede moverse libremente sin activar una alarma de abandono.
+ */
 data class SafeZoneGeofence(
     val id: String,
     val lat: Double,
@@ -21,6 +25,10 @@ data class SafeZoneGeofence(
     val radiusInMeters: Float
 )
 
+/**
+ * Controlador principal encargado de registrar, coordinar y dar de baja las geocercas en los servicios de Google Location API.
+ *  * Convierte la lÃ³gica de negocio de las zonas seguras en peticiones de monitoreo espacial altamente optimizadas en consumo de baterÃ­a.
+ */
 class GeofenceManager(context: Context) {
 
     private val appContext = context.applicationContext

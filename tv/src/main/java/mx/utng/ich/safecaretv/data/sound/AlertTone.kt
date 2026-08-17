@@ -3,6 +3,11 @@
 import android.content.Context
 import mx.utng.ich.safecaretv.R
 
+/**
+ * Modelo estructural que define los tonos de alerta y sonidos disponibles para las notificaciones.
+ *  * Permite categorizar y gestionar diferentes niveles de urgencia auditiva dependiendo de la gravedad del evento.
+ *  * Facilita la personalizaciÃ³n de las alarmas sonoras para el usuario final.
+ */
 data class AlertTone(
     val id: Int,
     val name: String,
@@ -10,6 +15,10 @@ data class AlertTone(
     val soundResId: Int
 )
 
+/**
+ * ColecciÃ³n estÃ¡tica y enlazada de los tonos de alerta predefinidos y soportados nativamente por la aplicaciÃ³n.
+ *  * ActÃºa como un catÃ¡logo centralizado para facilitar la selecciÃ³n en las interfaces de configuraciÃ³n.
+ */
 object AlertTones {
     val all = listOf(
         AlertTone(1, "Alerta clásica", "Dos pulsos claros", R.raw.alert_tone_1),
@@ -26,6 +35,10 @@ object AlertTones {
     fun find(id: Int): AlertTone = all.firstOrNull { it.id == id } ?: all.first()
 }
 
+/**
+ * Gestor local de preferencias (SharedPreferences o DataStore) diseÃ±ado para persistir la configuraciÃ³n de tonos.
+ *  * Mantiene guardado el tono de alerta seleccionado por el usuario para cada tipo de incidente, garantizando una experiencia personalizada.
+ */
 object AlertTonePreferences {
     private const val PREFERENCES_NAME = "tv_alert_tone_preferences"
     private const val SELECTED_TONE_KEY = "selected_tone"

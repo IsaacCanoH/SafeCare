@@ -13,10 +13,20 @@ import mx.utng.ich.safecaretv.data.youtube.YouTubeVideo
 
 sealed interface YouTubeUiState {
     data object Loading : YouTubeUiState
+    /**
+     * Estado de UI que representa el contenido cargado exitosamente.
+     */
     data class Content(val videos: List<YouTubeVideo>) : YouTubeUiState
+    /**
+     * Estado de UI que representa un error ocurrido durante la carga de datos.
+     */
     data class Error(val message: String) : YouTubeUiState
 }
 
+/**
+ * Gestor del estado y lÃ³gica de presentaciÃ³n para la galerÃ­a de videos integrados.
+ *  * Soporta la paginaciÃ³n, la respuesta a fallos de red y la entrega fluida del contenido multimedia al reproductor visual de la aplicaciÃ³n.
+ */
 class YouTubeViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = YouTubeRepository(application)
     private val _state = MutableStateFlow<YouTubeUiState>(YouTubeUiState.Loading)

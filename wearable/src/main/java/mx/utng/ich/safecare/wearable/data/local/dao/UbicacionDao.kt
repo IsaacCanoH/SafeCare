@@ -8,6 +8,10 @@ import androidx.room.Query
 import mx.utng.ich.safecare.wearable.data.local.entity.UbicacionEntity
 
 @Dao
+/**
+ * Clase DAO responsable de la lectura, escritura y depuraciÃ³n del historial de trayectorias GPS.
+ *  * Permite almacenar localmente las rutas seguidas por el dispositivo cuando la conexiÃ³n a la nube no estÃ¡ disponible.
+ */
 interface UbicacionDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

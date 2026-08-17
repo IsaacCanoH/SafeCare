@@ -5,6 +5,10 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 
+/**
+ * Gestor de seguridad responsable de la evaluaciÃ³n, solicitud y verificaciÃ³n de los permisos de geolocalizaciÃ³n en tiempo de ejecuciÃ³n.
+ *  * Maneja la lÃ³gica de permisos en primero y segundo plano, garantizando el cumplimiento de las polÃ­ticas de privacidad.
+ */
 class LocationPermissionManager(
     private val context: Context
 ) {

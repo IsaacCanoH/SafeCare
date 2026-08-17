@@ -10,6 +10,10 @@ import mx.utng.ich.safecare.wearable.data.repository.SupabaseRepository
 import mx.utng.ich.safecare.wearable.presentation.location.WearLocationReader
 import mx.utng.ich.safecare.wearable.presentation.sensors.DeviceStatusReader
 
+/**
+ * Tarea programada (Worker) de WorkManager responsable de la sincronizaciÃ³n periÃ³dica en segundo plano.
+ *  * Asegura que los datos crÃ­ticos suban a la nube y se procesen de manera confiable, respetando el estado de baterÃ­a y red.
+ */
 class StatusWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     /** Publica el estado del reloj y agenda su siguiente actualización. */
     override suspend fun doWork(): Result {

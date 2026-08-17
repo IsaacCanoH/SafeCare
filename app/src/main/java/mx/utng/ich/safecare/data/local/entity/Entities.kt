@@ -1,21 +1,10 @@
-package mx.utng.ich.safecare.data.local.entity
+﻿package mx.utng.ich.safecare.data.local.entity
 
 import java.util.UUID
 
 /**
- * Modelo de datos para un perfil de persona monitoreada en la aplicación móvil.
- *
- * Representa la información básica de un menor de edad o adulto mayor
- * que está siendo supervisado por un cuidador a través de SafeCare.
- *
- * @property idPerfil Identificador único del perfil, generado automáticamente.
- * @property nombre Nombre completo de la persona monitoreada.
- * @property edad Edad actual de la persona.
- * @property fechaNacimiento Fecha de nacimiento en formato texto, o `null` si no se proporcionó.
- * @property tipoPerfil Tipo de perfil: "menor", "adulto_mayor" o "cuidador".
- * @property foto URL de la foto del perfil, o `null` si no tiene.
- * @property estadoActual Estado activo del perfil; `true` si está siendo monitoreado.
- * @property idCuidador Identificador del cuidador responsable de este perfil.
+ * Entidad relacional para mapear los detalles de los perfiles monitoreados en las tablas de SQLite (Room).
+ *  * Define el esquema, las restricciones y las relaciones de los datos del paciente en el almacenamiento persistente local.
  */
 data class PerfilMonitoreadoEntity(
     val idPerfil: String = UUID.randomUUID().toString(),
@@ -29,19 +18,8 @@ data class PerfilMonitoreadoEntity(
 )
 
 /**
- * Modelo de datos para una zona segura definida por el cuidador.
- *
- * Define un área circular geográfica donde la persona monitoreada debe permanecer.
- * Si la persona sale de esta zona, se genera una alerta de seguridad.
- *
- * @property idZona Identificador único de la zona segura.
- * @property nombre Nombre descriptivo de la zona (ej. "Casa", "Escuela").
- * @property latitudCentro Latitud del centro de la zona segura.
- * @property longitudCentro Longitud del centro de la zona segura.
- * @property radioMetros Radio de la zona en metros.
- * @property activa Indica si el monitoreo de esta zona está habilitado.
- * @property idPerfil Perfil principal asignado a la zona, conservado por compatibilidad.
- * @property idPerfiles Conjunto de identificadores de perfiles asignados a esta zona.
+ * Registro base que almacena los parÃ¡metros exactos de una zona de contenciÃ³n espacial (geocerca).
+ *  * Define atributos vitales como las coordenadas del centro, el radio de tolerancia (en metros) y la identidad de la zona.
  */
 data class ZonaSeguraEntity(
     val idZona: String = UUID.randomUUID().toString(),
@@ -57,21 +35,8 @@ data class ZonaSeguraEntity(
 )
 
 /**
- * Modelo de datos de un smartwatch vinculado a un perfil monitoreado.
- *
- * Almacena la información del dispositivo Wear OS que lleva la persona supervisada,
- * incluyendo su estado de batería, conexión e identificadores de vinculación.
- *
- * @property idSmartwatch Identificador único interno del smartwatch.
- * @property numeroSerie Número de serie del reloj utilizado como identificador principal.
- * @property watchInstallationId Identificador de instalación generado por el reloj.
- * @property nombreDispositivo Nombre visible del dispositivo Wear OS.
- * @property modelo Modelo del hardware del reloj.
- * @property dataLayerNodeId Identificador del nodo en la Wearable Data Layer.
- * @property bateria Nivel de batería actual del reloj (0-100).
- * @property conexion Estado de conexión: "online" u "offline".
- * @property ultimaConexion Marca de tiempo de la última conexión registrada.
- * @property idPerfil Identificador del perfil monitoreado vinculado, o `null` si no está vinculado.
+ * Entidad de modelo relacional que representa fÃ­sicamente un reloj Wear OS asociado a un perfil.
+ *  * Guarda parÃ¡metros tÃ©cnicos como la direcciÃ³n MAC, nombre del dispositivo y tokens de vinculaciÃ³n en la base de datos local.
  */
 data class SmartwatchEntity(
     val idSmartwatch: String = UUID.randomUUID().toString(),
@@ -87,18 +52,9 @@ data class SmartwatchEntity(
 )
 
 /**
- * Modelo de datos de una alerta de seguridad generada por el sistema.
- *
- * Representa un evento de emergencia como un SOS o una salida de zona segura,
- * asociado a un perfil monitoreado y opcionalmente a una ubicación.
- *
- * @property idAlerta Identificador único de la alerta.
- * @property tipoAlerta Tipo de evento: "SOS", "FUERA_DE_ZONA" u otro clasificador.
- * @property descripcion Descripción legible del evento de alerta.
- * @property fechaHora Marca de tiempo en milisegundos del momento de la alerta.
- * @property estado Estado de la alerta: "ACTIVA" o "ATENDIDA".
- * @property idPerfil Identificador del perfil monitoreado que generó la alerta.
- * @property idUbicacion Identificador de la ubicación asociada, o `null` si no aplica.
+ * Entidad de base de datos que representa una alerta o incidente generado en el sistema.
+ *  * Almacena informaciÃ³n crÃ­tica como el tipo de alerta, el nivel de gravedad, la fecha y hora exacta, y el perfil afectado.
+ *  * Se utiliza en conjunciÃ³n con Room para garantizar la persistencia local de los datos.
  */
 data class AlertaEntity(
     val idAlerta: String = UUID.randomUUID().toString(),
@@ -125,16 +81,8 @@ data class AlertaConPerfil(
 )
 
 /**
- * Modelo de datos para una ubicación geográfica registrada por el smartwatch.
- *
- * Almacena las coordenadas GPS capturadas por el dispositivo Wear OS
- * junto con la marca temporal y el identificador del reloj que las reportó.
- *
- * @property idUbicacion Identificador único de la ubicación.
- * @property latitud Coordenada de latitud de la ubicación.
- * @property longitud Coordenada de longitud de la ubicación.
- * @property fechaHora Marca de tiempo en milisegundos de la captura.
- * @property idSmartwatch Identificador del smartwatch que reportó esta ubicación.
+ * Estructura de entidad que encapsula un punto geogrÃ¡fico (latitud, longitud) y un timestamp.
+ *  * Forma el nÃºcleo de la traza de movimiento del usuario monitoreado para su posterior anÃ¡lisis.
  */
 data class UbicacionEntity(
     val idUbicacion: String = UUID.randomUUID().toString(),

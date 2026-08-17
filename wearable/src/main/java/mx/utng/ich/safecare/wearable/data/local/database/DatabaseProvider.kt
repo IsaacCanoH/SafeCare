@@ -6,6 +6,10 @@ import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
+/**
+ * Proveedor centralizado que inicializa, configura y expone la instancia Ãºnica (Singleton) de la base de datos Room.
+ *  * Asegura que todas las operaciones locales compartan el mismo contexto de conexiÃ³n, mejorando el rendimiento y evitando bloqueos.
+ */
 object DatabaseProvider {
 
     @Volatile

@@ -9,6 +9,10 @@ import android.os.SystemClock
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
+/**
+ * Servicio de hardware enfocado en la lectura eficiente de las coordenadas GPS directamente desde el mÃ³dem del reloj inteligente.
+ *  * Minimiza el uso de la baterÃ­a mediante el uso de algoritmos de fusiÃ³n de sensores (Fused Location Provider) optimizados para wearables.
+ */
 class WearLocationReader(
     context: Context
 ) {

@@ -17,6 +17,10 @@ import mx.utng.ich.safecare.wearable.presentation.sensors.DeviceStatusReader
 import mx.utng.ich.safecare.wearable.presentation.ui.WearHomeUiState
 import mx.utng.ich.safecare.wearable.data.repository.SupabaseRepository
 
+/**
+ * Controlador orquestador que fusiona los datos de los diferentes sensores biomÃ©tricos y de entorno del smartwatch.
+ *  * Procesa localmente la informaciÃ³n en el reloj antes de enviarla, determinando si hay anomalÃ­as que requieran una transmisiÃ³n inmediata.
+ */
 class WearStatusController(
     private val context: Context,
     private val onUiStateChange: (WearHomeUiState) -> Unit

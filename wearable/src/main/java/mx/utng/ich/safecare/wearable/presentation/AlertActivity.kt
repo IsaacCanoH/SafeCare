@@ -22,6 +22,11 @@ import kotlinx.coroutines.withContext
 import mx.utng.ich.safecare.wearable.presentation.geofence.SafeCareAlertNotifier
 import mx.utng.ich.safecare.wearable.presentation.ui.WearAlertScreen
 
+/**
+ * Actividad principal diseÃ±ada especÃ­ficamente para la visualizaciÃ³n y gestiÃ³n de alertas crÃ­ticas en la interfaz de usuario.
+ *  * Esta actividad se lanza de forma prioritaria cuando se detecta una anomalÃ­a en los signos vitales, una salida de zona segura, o una alerta manual.
+ *  * Proporciona opciones rÃ¡pidas de respuesta y muestra detalles crÃ­ticos del incidente.
+ */
 class AlertActivity : ComponentActivity() {
     private var vibrator: Vibrator? = null
     private var displayAddress by mutableStateOf("Ubicacion desconocida")

@@ -15,6 +15,10 @@ import kotlinx.serialization.Serializable
 import mx.utng.ich.safecare.wearable.data.local.entity.PerfilMonitoreadoEntity
 import mx.utng.ich.safecare.wearable.data.local.entity.ZonaSeguraEntity
 
+/**
+ * Repositorio de alto nivel que abstrae y consolida las llamadas a la API REST y Realtime de Supabase.
+ *  * Proporciona un punto Ãºnico de verdad para que el resto de la aplicaciÃ³n solicite datos a la nube sin acoplarse a la librerÃ­a de red.
+ */
 class SupabaseRepository {
 
     private val client = SupabaseClient.client
@@ -181,6 +185,10 @@ class SupabaseRepository {
     )
 }
 
+/**
+ * Clase de configuraciÃ³n persistente que mantiene la integridad de la sesiÃ³n vinculada.
+ *  * Asegura que las credenciales y los tokens de acceso de Supabase permanezcan activos y vÃ¡lidos entre los reinicios de la aplicaciÃ³n.
+ */
 data class LinkedConfiguration(
     val profile: PerfilMonitoreadoEntity,
     val zones: List<ZonaSeguraEntity>

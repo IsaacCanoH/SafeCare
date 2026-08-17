@@ -15,6 +15,10 @@ import android.util.Log
 import mx.utng.ich.safecare.wearable.R
 import mx.utng.ich.safecare.wearable.presentation.AlertActivity
 
+/**
+ * Servicio omnicanal encargado de la emisiÃ³n y propagaciÃ³n de las notificaciones de emergencia.
+ *  * Coordina alertas visuales (pop-ups), alertas sonoras (alarmas), y notificaciones Push del sistema para garantizar que la alerta no sea ignorada.
+ */
 object SafeCareAlertNotifier {
 
     /** Muestra la notificación de salida de una zona segura. */

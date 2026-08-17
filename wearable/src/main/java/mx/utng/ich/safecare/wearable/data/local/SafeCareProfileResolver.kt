@@ -1,4 +1,4 @@
-
+﻿
 package mx.utng.ich.safecare.wearable.data.local
 
 import android.util.Log
@@ -6,6 +6,10 @@ import androidx.room.withTransaction
 import mx.utng.ich.safecare.wearable.data.local.database.SafeCareDatabase
 import mx.utng.ich.safecare.wearable.data.repository.SupabaseRepository
 
+/**
+ * Servicio analÃ­tico diseÃ±ado para cruzar, verificar y resolver los datos del perfil activo contra las configuraciones globales.
+ *  * Asegura que se estÃ©n aplicando las reglas de negocio correctas dependiendo del tipo de paciente seleccionado.
+ */
 object SafeCareProfileResolver {
     /**
      * Obtiene el perfil vinculado al reloj. Si Room todavía no tiene la configuración,

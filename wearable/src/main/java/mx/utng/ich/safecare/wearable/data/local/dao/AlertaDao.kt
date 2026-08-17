@@ -8,6 +8,11 @@ import androidx.room.Query
 import mx.utng.ich.safecare.wearable.data.local.entity.AlertaEntity
 
 @Dao
+/**
+ * Objeto de Acceso a Datos (DAO) para las operaciones de base de datos relacionadas con las alertas del sistema.
+ *  * Permite la persistencia, consulta, actualizaciÃ³n y eliminaciÃ³n de los registros de incidentes.
+ *  * Facilita el acceso estructurado a los historiales para auditorÃ­as o anÃ¡lisis de patrones de riesgo.
+ */
 interface AlertaDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

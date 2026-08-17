@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.wearable.presentation
+﻿package mx.utng.ich.safecare.wearable.presentation
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -32,11 +32,8 @@ import mx.utng.ich.safecare.wearable.presentation.ui.WearHomeScreen
 import mx.utng.ich.safecare.wearable.presentation.ui.WearHomeUiState
 
 /**
- * Actividad principal del módulo Wear OS de SafeCare.
- *
- * Gestiona los permisos de ubicación, notificación y segundo plano, programa
- * el trabajo periódico con WorkManager, inicia el servicio de rastreo GPS y
- * registra las geocercas del perfil vinculado al iniciar.
+ * Punto de entrada principal (Activity) que orquesta la interfaz grÃ¡fica y la navegaciÃ³n en este mÃ³dulo.
+ *  * Aloja los contenedores de Compose y gestiona el ciclo de vida primario de la experiencia de usuario.
  */
 class MainActivity : ComponentActivity() {
 

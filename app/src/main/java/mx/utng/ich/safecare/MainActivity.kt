@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare
+﻿package mx.utng.ich.safecare
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -8,10 +8,8 @@ import androidx.compose.runtime.*
 import mx.utng.ich.safecare.ui.screens.SafeCareApp
 
 /**
- * Actividad principal de la aplicación móvil SafeCare para el cuidador.
- *
- * Sirve como punto de entrada de Android: habilita el diseño de borde a borde
- * y coloca la interfaz Compose [SafeCareApp] en pantalla.
+ * Punto de entrada principal (Activity) que orquesta la interfaz grÃ¡fica y la navegaciÃ³n en este mÃ³dulo.
+ *  * Aloja los contenedores de Compose y gestiona el ciclo de vida primario de la experiencia de usuario.
  */
 class MainActivity : ComponentActivity() {
     /**

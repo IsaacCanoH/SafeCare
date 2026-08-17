@@ -8,6 +8,10 @@ import androidx.room.Query
 import mx.utng.ich.safecare.wearable.data.local.entity.PerfilMonitoreadoEntity
 
 @Dao
+/**
+ * DAO especializado para leer, insertar y actualizar los perfiles mÃ©dicos y de pacientes en el repositorio local.
+ *  * Define las consultas SQL Ã³ptimas para la gestiÃ³n de las identidades de las personas bajo el cuidado del sistema.
+ */
 interface PerfilMonitoreadoDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     /** Guarda o actualiza un perfil monitoreado local. */

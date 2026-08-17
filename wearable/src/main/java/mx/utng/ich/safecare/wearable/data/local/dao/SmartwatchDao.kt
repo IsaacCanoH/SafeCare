@@ -8,6 +8,10 @@ import androidx.room.Query
 import mx.utng.ich.safecare.wearable.data.local.entity.SmartwatchEntity
 
 @Dao
+/**
+ * Objeto DAO diseÃ±ado exclusivamente para la administraciÃ³n local del catÃ¡logo de relojes inteligentes vinculados.
+ *  * Provee mÃ©todos para emparejar, desvincular y actualizar el estado de los dispositivos Wear OS registrados en la base local.
+ */
 interface SmartwatchDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

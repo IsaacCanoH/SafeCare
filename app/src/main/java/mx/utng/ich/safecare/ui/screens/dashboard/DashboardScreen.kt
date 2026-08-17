@@ -19,6 +19,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+/**
+ * Modelo de datos detallado que representa a un usuario monitoreado (como un adulto mayor o un paciente) en la plataforma.
+ *  * Consolida la informaciÃ³n demogrÃ¡fica bÃ¡sica y los identificadores Ãºnicos necesarios para asociar los datos mÃ©dicos y de ubicaciÃ³n.
+ */
 data class MonitoredPerson(
     val id: String,
     val name: String,

@@ -11,6 +11,10 @@ import kotlinx.coroutines.launch
 import mx.utng.ich.safecaretv.data.alert.TvAlert
 import mx.utng.ich.safecaretv.data.alert.TvAlertsRepository
 
+/**
+ * ViewModel adaptado a las limitaciones y navegaciÃ³n (D-Pad) de la televisiÃ³n.
+ *  * Gestiona el carrusel o lista de alertas visuales en la pantalla, manejando las confirmaciones desde el mando a distancia.
+ */
 class TvAlertsViewModel : ViewModel() {
     private val repository = TvAlertsRepository()
     private val _activeAlert = MutableStateFlow<TvAlert?>(null)

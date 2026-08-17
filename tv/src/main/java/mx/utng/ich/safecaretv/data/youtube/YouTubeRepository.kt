@@ -21,6 +21,10 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import mx.utng.ich.safecaretv.BuildConfig
 
+/**
+ * Capa de abstracciÃ³n para la interacciÃ³n con la API de datos de YouTube.
+ *  * Administra la recuperaciÃ³n, el filtrado y el almacenamiento en cachÃ© de listas de reproducciÃ³n curadas y videos de interÃ©s para los usuarios del sistema.
+ */
 class YouTubeRepository(
     context: Context,
     private val apiKey: String = BuildConfig.YOUTUBE_API_KEY

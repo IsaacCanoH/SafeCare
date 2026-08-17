@@ -13,6 +13,10 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import mx.utng.ich.safecaretv.data.remote.TvSupabaseClient
 
+/**
+ * Repositorio dedicado al entorno de TV, encargado de recibir y encolar las alertas de emergencia entrantes.
+ *  * Optimizado para reaccionar a eventos Realtime y notificar a la interfaz del televisor instantÃ¡neamente.
+ */
 class TvAlertsRepository {
     private val client = TvSupabaseClient.client
 

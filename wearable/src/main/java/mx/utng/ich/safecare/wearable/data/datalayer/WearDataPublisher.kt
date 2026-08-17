@@ -9,6 +9,10 @@ import mx.utng.ich.safecare.wearable.data.local.entity.AlertaEntity
 import mx.utng.ich.safecare.wearable.data.local.entity.SmartwatchEntity
 import mx.utng.ich.safecare.wearable.data.local.entity.UbicacionEntity
 
+/**
+ * Clase altamente especializada, responsable de recolectar, empacar y emitir actualizaciones de datos desde el reloj hacia la red.
+ *  * Funciona como el emisor de los signos vitales obtenidos por los sensores biomÃ©tricos, garantizando la entrega a travÃ©s del DataClient.
+ */
 class WearDataPublisher(context: Context) {
     private val dataClient = Wearable.getDataClient(context.applicationContext)
 

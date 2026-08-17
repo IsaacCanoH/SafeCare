@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.data.repository
+﻿package mx.utng.ich.safecare.data.repository
 
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
@@ -26,12 +26,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Repositorio central de datos de la aplicación móvil del cuidador.
- *
- * Encapsula todas las operaciones de lectura y escritura contra Supabase,
- * incluyendo la gestión de ubicaciones, alertas, usuarios, perfiles monitoreados
- * y zonas seguras. También traduce las columnas de Supabase a los modelos Kotlin
- * usados por los ViewModels y la interfaz de usuario.
+ * Repositorio de alto nivel que abstrae y consolida las llamadas a la API REST y Realtime de Supabase.
+ *  * Proporciona un punto Ãºnico de verdad para que el resto de la aplicaciÃ³n solicite datos a la nube sin acoplarse a la librerÃ­a de red.
  */
 class SupabaseRepository {
 

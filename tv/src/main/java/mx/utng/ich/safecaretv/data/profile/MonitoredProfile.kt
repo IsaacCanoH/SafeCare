@@ -1,5 +1,8 @@
-package mx.utng.ich.safecaretv.data.profile
+﻿package mx.utng.ich.safecaretv.data.profile
 
+/**
+ * EnumeraciÃ³n MonitoringStatus del sistema SafeCare.
+ */
 enum class MonitoringStatus {
     SAFE,
     OUTSIDE_SAFE_ZONE,
@@ -7,6 +10,10 @@ enum class MonitoringStatus {
     OFFLINE
 }
 
+/**
+ * Perfil exhaustivo que encapsula a una persona monitoreada junto con todas sus configuraciones y mÃ©tricas asociadas.
+ *  * Proporciona una vista unificada del estado actual del paciente para ser consumida por los cuadros de mando (dashboards).
+ */
 data class MonitoredProfile(
     val id: String,
     val name: String,
@@ -28,6 +35,10 @@ data class MonitoredProfile(
     val watchIds: Set<String> = emptySet()
 )
 
+/**
+ * Envoltorio de informaciÃ³n consolidada que agrupa todas las zonas seguras activas y asignadas a un perfil especÃ­fico.
+ *  * Facilita el transporte de datos espaciales entre las capas de dominio y presentaciÃ³n.
+ */
 data class SafeZoneInfo(
     val name: String,
     val latitude: Double,

@@ -8,6 +8,10 @@ import androidx.room.Query
 import mx.utng.ich.safecare.wearable.data.local.entity.ZonaSeguraEntity
 
 @Dao
+/**
+ * Objeto DAO diseÃ±ado para la manipulaciÃ³n y consulta de zonas geofencing a nivel de base de datos.
+ *  * Mapea las consultas requeridas para activar o desactivar perÃ­metros de vigilancia geogrÃ¡fica de forma programÃ¡tica.
+ */
 interface ZonaSeguraDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

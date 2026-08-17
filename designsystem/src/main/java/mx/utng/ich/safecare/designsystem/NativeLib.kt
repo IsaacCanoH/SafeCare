@@ -1,5 +1,9 @@
-package mx.utng.ich.safecare.designsystem
+﻿package mx.utng.ich.safecare.designsystem
 
+/**
+ * Interfaz de comunicaciÃ³n JNI (Java Native Interface) para interactuar con bibliotecas compiladas en C/C++.
+ *  * Permite la ejecuciÃ³n de algoritmos de procesamiento de seÃ±ales o tareas intensivas con un rendimiento nativo superior.
+ */
 class NativeLib {
 
     /**

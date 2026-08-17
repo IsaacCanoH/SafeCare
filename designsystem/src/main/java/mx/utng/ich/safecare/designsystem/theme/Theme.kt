@@ -243,6 +243,10 @@ private val highContrastDarkColorScheme = darkColorScheme(
 )
 
 @Immutable
+/**
+ * Estructura de diseÃ±o (Design System) que agrupa colores complementarios utilizados en toda la interfaz de la aplicaciÃ³n.
+ *  * Garantiza la coherencia visual y el soporte fluido entre los modos claro y oscuro, manteniendo la accesibilidad.
+ */
 data class ColorFamily(
     val color: Color,
     val onColor: Color,
@@ -277,4 +281,3 @@ fun AppTheme(
     content = content
   )
 }
-

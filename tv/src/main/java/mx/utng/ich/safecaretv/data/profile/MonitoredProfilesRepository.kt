@@ -13,6 +13,10 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+/**
+ * Capa de repositorio abstracta para la gestiÃ³n bidireccional de los perfiles monitoreados.
+ *  * Sincroniza los datos entre la base de datos remota (Supabase) y el almacenamiento local (Room), implementando polÃ­ticas de cachÃ© offline.
+ */
 class MonitoredProfilesRepository {
     private val client = TvSupabaseClient.client
 
