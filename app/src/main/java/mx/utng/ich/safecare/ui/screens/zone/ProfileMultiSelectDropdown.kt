@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.ui.screens.zone
+﻿package mx.utng.ich.safecare.ui.screens.zone
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn

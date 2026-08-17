@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.ui.screens.dashboard
+﻿package mx.utng.ich.safecare.ui.screens.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -33,7 +33,7 @@ data class MonitoredPerson(
 )
 
 @Composable
-// Muestra el resumen y accesos de los perfiles monitoreados.
+/** Muestra el resumen y accesos de los perfiles monitoreados. */
 fun DashboardContent(
     userName: String = "Usuario",
     monitoredPersons: List<MonitoredPerson> = emptyList(),
@@ -99,7 +99,7 @@ fun DashboardContent(
 }
 
 @Composable
-// Muestra el estado resumido de un perfil monitoreado.
+/** Muestra el estado resumido de un perfil monitoreado. */
 fun PersonCard(person: MonitoredPerson, onClick: () -> Unit) {
     Card(
         onClick = onClick,
@@ -207,7 +207,7 @@ fun PersonCard(person: MonitoredPerson, onClick: () -> Unit) {
 }
 
 @Composable
-// Muestra un indicador compacto de estado del perfil.
+/** Muestra un indicador compacto de estado del perfil. */
 fun StatusItem(icon: ImageVector, value: String, label: String) {
     Column {
         Text(text = label, fontSize = 8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)

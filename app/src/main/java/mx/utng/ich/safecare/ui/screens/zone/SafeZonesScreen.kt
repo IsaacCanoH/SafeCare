@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.ui.screens.zone
+﻿package mx.utng.ich.safecare.ui.screens.zone
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -22,7 +22,7 @@ import mx.utng.ich.safecare.ui.viewmodel.SafeZoneViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-// Muestra y permite administrar las zonas seguras registradas.
+/** Muestra y permite administrar las zonas seguras registradas. */
 fun SafeZonesScreen(
     viewModel: SafeZoneViewModel,
     onBackClick: () -> Unit = {},
@@ -77,7 +77,7 @@ fun SafeZonesScreen(
 }
 
 @Composable
-// Muestra el estado y acciones de una zona segura.
+/** Muestra el estado y acciones de una zona segura. */
 fun ZoneItem(
     zone: ZonaSeguraEntity, 
     onEditClick: () -> Unit,

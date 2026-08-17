@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.ui.screens.profile
+﻿package mx.utng.ich.safecare.ui.screens.profile
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,7 +21,7 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-// Muestra el formulario para crear un perfil monitoreado.
+/** Muestra el formulario para crear un perfil monitoreado. */
 fun AddProfileScreen(
     viewModel: ProfileViewModel,
     onBackClick: () -> Unit = {},
@@ -337,7 +337,7 @@ fun AddProfileScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-// Muestra una opción seleccionable para el tipo de perfil.
+/** Muestra una opción seleccionable para el tipo de perfil. */
 fun ProfileTypeChip(
     selected: Boolean,
     onClick: () -> Unit,

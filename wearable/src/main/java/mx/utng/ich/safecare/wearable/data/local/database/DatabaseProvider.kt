@@ -1,4 +1,4 @@
-
+﻿
 package mx.utng.ich.safecare.wearable.data.local.database
 
 import android.content.Context
@@ -11,7 +11,7 @@ object DatabaseProvider {
     @Volatile
     private var instance: SafeCareDatabase? = null
 
-    // Crea o devuelve la instancia única de la base local.
+    /** Crea o devuelve la instancia única de la base local. */
     fun getDatabase(context: Context): SafeCareDatabase {
         return instance ?: synchronized(this) {
             instance ?: Room.databaseBuilder(
@@ -29,21 +29,21 @@ object DatabaseProvider {
     }
 
     private val MIGRATION_8_10 = object : Migration(8, 10) {
-        // Migra la tabla de smartwatch a la siguiente versión.
+        /** Migra la tabla de smartwatch a la siguiente versión. */
         override fun migrate(db: SupportSQLiteDatabase) {
             migrateSmartwatchTable(db, copyTemporaryHistory = false)
         }
     }
 
     private val MIGRATION_9_10 = object : Migration(9, 10) {
-        // Migra el esquema local a las entidades actuales.
+        /** Migra el esquema local a las entidades actuales. */
         override fun migrate(db: SupportSQLiteDatabase) {
             migrateSmartwatchTable(db, copyTemporaryHistory = true)
         }
     }
 
     private val MIGRATION_10_11 = object : Migration(10, 11) {
-        // Actualiza todas las tablas al formato local vigente.
+        /** Actualiza todas las tablas al formato local vigente. */
         override fun migrate(db: SupportSQLiteDatabase) {
             migratePerfilMonitoreadoToModel(db)
             migrateZonaSeguraToModel(db)
@@ -53,7 +53,7 @@ object DatabaseProvider {
         }
     }
 
-    // Reconstruye la tabla de smartwatch sin perder datos compatibles.
+    /** Reconstruye la tabla de smartwatch sin perder datos compatibles. */
     private fun migrateSmartwatchTable(
         db: SupportSQLiteDatabase,
         copyTemporaryHistory: Boolean
@@ -129,7 +129,7 @@ object DatabaseProvider {
         db.execSQL("DROP TABLE IF EXISTS `smartwatch_estado_historial`")
     }
 
-    // Adapta la tabla de perfiles al modelo actual.
+    /** Adapta la tabla de perfiles al modelo actual. */
     private fun migratePerfilMonitoreadoToModel(db: SupportSQLiteDatabase) {
         db.execSQL(createPerfilMonitoreadoSql())
 
@@ -164,7 +164,7 @@ object DatabaseProvider {
         db.execSQL("DROP TABLE `perfil_monitoreado`")
     }
 
-    // Adapta la tabla de zonas seguras al modelo actual.
+    /** Adapta la tabla de zonas seguras al modelo actual. */
     private fun migrateZonaSeguraToModel(db: SupportSQLiteDatabase) {
         db.execSQL(createZonaSeguraSql())
 
@@ -197,7 +197,7 @@ object DatabaseProvider {
         db.execSQL("DROP TABLE `zona_segura`")
     }
 
-    // Adapta la tabla de smartwatch al modelo actual.
+    /** Adapta la tabla de smartwatch al modelo actual. */
     private fun migrateSmartwatchToModel(db: SupportSQLiteDatabase) {
         if (tableExists(db, "smartwatch")) {
             db.execSQL("ALTER TABLE `smartwatch` RENAME TO `smartwatch_model_old`")
@@ -238,7 +238,7 @@ object DatabaseProvider {
         db.execSQL("DROP TABLE `smartwatch_model_old`")
     }
 
-    // Adapta la tabla de ubicaciones al modelo actual.
+    /** Adapta la tabla de ubicaciones al modelo actual. */
     private fun migrateUbicacionToModel(db: SupportSQLiteDatabase) {
         db.execSQL(createUbicacionSql())
 
@@ -267,7 +267,7 @@ object DatabaseProvider {
         db.execSQL("DROP TABLE `ubicaciones`")
     }
 
-    // Adapta la tabla de alertas al modelo actual.
+    /** Adapta la tabla de alertas al modelo actual. */
     private fun migrateAlertasToModel(db: SupportSQLiteDatabase) {
         if (tableExists(db, "alertas")) {
             db.execSQL("ALTER TABLE `alertas` RENAME TO `alertas_model_old`")
@@ -304,7 +304,7 @@ object DatabaseProvider {
         db.execSQL("DROP TABLE `alertas_model_old`")
     }
 
-    // Genera el SQL para crear la tabla de perfiles.
+    /** Genera el SQL para crear la tabla de perfiles. */
     private fun createPerfilMonitoreadoSql(): String {
         return """
             CREATE TABLE IF NOT EXISTS `PerfilMonitoreado` (
@@ -321,7 +321,7 @@ object DatabaseProvider {
         """.trimIndent()
     }
 
-    // Genera el SQL para crear la tabla de zonas seguras.
+    /** Genera el SQL para crear la tabla de zonas seguras. */
     private fun createZonaSeguraSql(): String {
         return """
             CREATE TABLE IF NOT EXISTS `ZonaSegura` (
@@ -337,7 +337,7 @@ object DatabaseProvider {
         """.trimIndent()
     }
 
-    // Genera el SQL para crear la tabla de smartwatch.
+    /** Genera el SQL para crear la tabla de smartwatch. */
     private fun createSmartwatchSql(): String {
         return """
             CREATE TABLE IF NOT EXISTS `SmartWatch` (
@@ -353,7 +353,7 @@ object DatabaseProvider {
         """.trimIndent()
     }
 
-    // Genera el SQL para crear la tabla de ubicaciones.
+    /** Genera el SQL para crear la tabla de ubicaciones. */
     private fun createUbicacionSql(): String {
         return """
             CREATE TABLE IF NOT EXISTS `Ubicacion` (
@@ -367,7 +367,7 @@ object DatabaseProvider {
         """.trimIndent()
     }
 
-    // Genera el SQL para crear la tabla de alertas.
+    /** Genera el SQL para crear la tabla de alertas. */
     private fun createAlertasSql(): String {
         return """
             CREATE TABLE IF NOT EXISTS `Alertas` (
@@ -383,7 +383,7 @@ object DatabaseProvider {
         """.trimIndent()
     }
 
-    // Verifica si una tabla existe antes de migrarla.
+    /** Verifica si una tabla existe antes de migrarla. */
     private fun tableExists(db: SupportSQLiteDatabase, tableName: String): Boolean {
         val cursor = db.query(
             "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",

@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.ui.screens.map
+﻿package mx.utng.ich.safecare.ui.screens.map
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -26,7 +26,7 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 
 @Composable
-// Muestra el mapa con la última ubicación y zonas de los perfiles.
+/** Muestra el mapa con la última ubicación y zonas de los perfiles. */
 fun LiveMapScreen(
     profileViewModel: ProfileViewModel,
     zoneViewModel: SafeZoneViewModel,
@@ -44,14 +44,14 @@ fun LiveMapScreen(
     var isSendingAlert by remember { mutableStateOf(false) }
     var alertFeedback by remember { mutableStateOf<String?>(null) }
     
-    // Filtrar perfiles según si venimos de un perfil específico o de la barra global
+    /** Filtrar perfiles según si venimos de un perfil específico o de la barra global */
     val displayedProfiles = if (selectedProfileId != null) {
         profiles.filter { it.idPerfil == selectedProfileId }
     } else {
         profiles
     }
 
-    // Perfil para mostrar en la tarjeta inferior (el primero de la lista mostrada)
+    /** Perfil para mostrar en la tarjeta inferior (el primero de la lista mostrada) */
     val cardProfile = displayedProfiles.firstOrNull()
     val cardLocation = cardProfile?.let { latestLocations[it.idPerfil] }
     val mapCenter = cardLocation?.let { GeoPoint(it.latitud, it.longitud) }
@@ -267,7 +267,7 @@ fun LiveMapScreen(
 
 private const val MAX_CUSTOM_ALERT_LENGTH = 160
 
-// Convierte una marca de tiempo en un texto de tiempo transcurrido.
+/** Convierte una marca de tiempo en un texto de tiempo transcurrido. */
 private fun formatElapsedTime(timestamp: Long): String {
     val elapsedSeconds =
         ((System.currentTimeMillis() - timestamp) / 1_000).coerceAtLeast(0)

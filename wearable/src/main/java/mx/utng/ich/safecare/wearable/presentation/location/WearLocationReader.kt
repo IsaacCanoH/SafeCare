@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.wearable.presentation.location
+﻿package mx.utng.ich.safecare.wearable.presentation.location
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -16,7 +16,7 @@ class WearLocationReader(
     private val locationManager = appContext.getSystemService(LocationManager::class.java)
 
     @SuppressLint("MissingPermission")
-    // Obtiene la ubicación actual usando el proveedor disponible.
+    /** Obtiene la ubicación actual usando el proveedor disponible. */
     fun getCurrentLocation(
         onLocationTextChange: (String) -> Unit
     ) {
@@ -45,7 +45,7 @@ class WearLocationReader(
     }
 
     @SuppressLint("MissingPermission")
-    // Obtiene de forma suspendida una ubicación GPS válida del reloj.
+    /** Obtiene de forma suspendida una ubicación GPS válida del reloj. */
     suspend fun getCurrentLocationData(): Location? {
         if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             return null
@@ -63,7 +63,7 @@ class WearLocationReader(
         return location?.takeIf(::isUsableWatchGpsLocation)
     }
 
-    // Valida precisión y antigüedad de una ubicación GPS.
+    /** Valida precisión y antigüedad de una ubicación GPS. */
     private fun isUsableWatchGpsLocation(location: Location): Boolean {
         return location.provider == LocationManager.GPS_PROVIDER &&
                 location.latitude in -90.0..90.0 &&
@@ -72,7 +72,7 @@ class WearLocationReader(
                 (!location.hasAccuracy() || location.accuracy <= MAX_ACCURACY_METERS)
     }
 
-    // Calcula la antigüedad de una ubicación en milisegundos.
+    /** Calcula la antigüedad de una ubicación en milisegundos. */
     private fun locationAgeMillis(location: Location): Long {
         if (location.elapsedRealtimeNanos <= 0L) return Long.MAX_VALUE
         return (

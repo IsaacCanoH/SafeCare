@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.data.youtube
+﻿package mx.utng.ich.safecaretv.data.youtube
 
 import android.content.Context
 import android.content.pm.PackageManager
@@ -30,7 +30,7 @@ class YouTubeRepository(
     private val json = Json { ignoreUnknownKeys = true }
     private val certificateSha1 = appContext.signingCertificateSha1()
 
-    // Descarga videos de YouTube recomendados para el cuidado.
+    /** Descarga videos de YouTube recomendados para el cuidado. */
     suspend fun getCareRecommendations(): List<YouTubeVideo> {
         check(apiKey.isNotBlank()) {
             "Falta configurar YOUTUBE_API_KEY en local.properties"
@@ -83,12 +83,12 @@ class YouTubeRepository(
         }
     }
 
-    // Libera el cliente HTTP usado para consultar YouTube.
+    /** Libera el cliente HTTP usado para consultar YouTube. */
     fun close() {
         client.close()
     }
 
-    // Consulta y asocia la duración de cada video recomendado.
+    /** Consulta y asocia la duración de cada video recomendado. */
     private suspend fun getDurations(videoIds: List<String>): Map<String, String> {
         val response = client.get("$BASE_URL/videos") {
             addAndroidRestrictionHeaders()
@@ -114,7 +114,7 @@ class YouTubeRepository(
             .toMap()
     }
 
-    // Valida que la respuesta HTTP de YouTube sea correcta.
+    /** Valida que la respuesta HTTP de YouTube sea correcta. */
     private fun ensureSuccessful(statusCode: Int, responseBody: String) {
         if (statusCode in 200..299) return
         val reason = runCatching {
@@ -139,11 +139,11 @@ class YouTubeRepository(
         )
     }
 
-    // Obtiene un texto obligatorio de un objeto JSON.
+    /** Obtiene un texto obligatorio de un objeto JSON. */
     private fun JsonObject.string(key: String): String =
         get(key)?.jsonPrimitive?.contentOrNull.orEmpty()
 
-    // Elige la miniatura de mayor calidad disponible.
+    /** Elige la miniatura de mayor calidad disponible. */
     private fun JsonObject.bestThumbnailUrl(): String? =
         listOf("medium", "high", "default")
             .firstNotNullOfOrNull { quality ->
@@ -151,7 +151,7 @@ class YouTubeRepository(
                     ?.get("url")?.jsonPrimitive?.contentOrNull
             }
 
-    // Agrega datos de la app requeridos por la restricción Android.
+    /** Agrega datos de la app requeridos por la restricción Android. */
     private fun io.ktor.client.request.HttpRequestBuilder.addAndroidRestrictionHeaders() {
         header("X-Android-Package", BuildConfig.APPLICATION_ID)
         if (certificateSha1.isNotBlank()) {
@@ -160,11 +160,11 @@ class YouTubeRepository(
     }
 
     @Suppress("DEPRECATION")
-    // Decodifica entidades HTML presentes en los títulos de video.
+    /** Decodifica entidades HTML presentes en los títulos de video. */
     private fun decodeHtml(value: String): String =
         Html.fromHtml(value, Html.FROM_HTML_MODE_LEGACY).toString()
 
-    // Convierte la duración ISO de YouTube a un formato legible.
+    /** Convierte la duración ISO de YouTube a un formato legible. */
     private fun formatDuration(value: String): String = runCatching {
         val duration = Duration.parse(value)
         val totalSeconds = duration.seconds
@@ -184,7 +184,7 @@ class YouTubeRepository(
     }
 }
 
-// Obtiene la huella SHA-1 de firma para las solicitudes de YouTube.
+/** Obtiene la huella SHA-1 de firma para las solicitudes de YouTube. */
 private fun Context.signingCertificateSha1(): String = runCatching {
     val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
         packageManager.getPackageInfo(

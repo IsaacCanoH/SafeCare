@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.wearable.presentation.ui
+﻿package mx.utng.ich.safecare.wearable.presentation.ui
 
 data class WearHomeUiState(
     val greetingName: String = "SafeCare",

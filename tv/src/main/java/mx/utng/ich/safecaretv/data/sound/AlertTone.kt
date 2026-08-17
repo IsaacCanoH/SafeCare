@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.data.sound
+﻿package mx.utng.ich.safecaretv.data.sound
 
 import android.content.Context
 import mx.utng.ich.safecaretv.R
@@ -22,7 +22,7 @@ object AlertTones {
         AlertTone(8, "Atención", "Tres campanadas", R.raw.alert_tone_8)
     )
 
-    // Busca un tono por identificador con un tono seguro por defecto.
+    /** Busca un tono por identificador con un tono seguro por defecto. */
     fun find(id: Int): AlertTone = all.firstOrNull { it.id == id } ?: all.first()
 }
 
@@ -30,13 +30,13 @@ object AlertTonePreferences {
     private const val PREFERENCES_NAME = "tv_alert_tone_preferences"
     private const val SELECTED_TONE_KEY = "selected_tone"
 
-    // Obtiene el tono de alerta guardado en las preferencias.
+    /** Obtiene el tono de alerta guardado en las preferencias. */
     fun selected(context: Context): AlertTone {
         val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
         return AlertTones.find(preferences.getInt(SELECTED_TONE_KEY, AlertTones.all.first().id))
     }
 
-    // Guarda el tono elegido para próximas alertas.
+    /** Guarda el tono elegido para próximas alertas. */
     fun select(context: Context, tone: AlertTone) {
         context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
             .edit()

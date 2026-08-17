@@ -11,12 +11,14 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
+/** Esquema de colores para el modo oscuro de la aplicación móvil. */
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
     secondary = PurpleGrey80,
     tertiary = Pink80
 )
 
+/** Esquema de colores para el modo claro de la aplicación móvil. */
 private val LightColorScheme = lightColorScheme(
     primary = Purple40,
     secondary = PurpleGrey40,
@@ -33,6 +35,16 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
+/**
+ * Tema Compose principal de la aplicación móvil SafeCare.
+ *
+ * Selecciona el esquema de colores según las preferencias del sistema (claro/oscuro)
+ * y utiliza colores dinámicos de Material You en Android 12 o superior.
+ *
+ * @param darkTheme Indica si se debe usar el tema oscuro; por defecto sigue al sistema.
+ * @param dynamicColor Habilita colores dinámicos de Material You en Android 12+.
+ * @param content Contenido Compose que recibe el tema aplicado.
+ */
 @Composable
 fun SafeCareTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

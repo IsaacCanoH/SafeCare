@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.ui.viewmodel
+﻿package mx.utng.ich.safecaretv.ui.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -26,7 +26,7 @@ class YouTubeViewModel(application: Application) : AndroidViewModel(application)
         loadRecommendations()
     }
 
-    // Carga las recomendaciones de video para la pantalla principal.
+    /** Carga las recomendaciones de video para la pantalla principal. */
     fun loadRecommendations() {
         viewModelScope.launch {
             _state.value = YouTubeUiState.Loading
@@ -46,7 +46,7 @@ class YouTubeViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    // Libera recursos al destruir el ViewModel.
+    /** Libera recursos al destruir el ViewModel. */
     override fun onCleared() {
         repository.close()
         super.onCleared()

@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.data.profile
+﻿package mx.utng.ich.safecaretv.data.profile
 
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
@@ -16,7 +16,7 @@ import kotlin.math.sqrt
 class MonitoredProfilesRepository {
     private val client = TvSupabaseClient.client
 
-    // Obtiene perfiles, relojes, ubicaciones y zonas para la TV.
+    /** Obtiene perfiles, relojes, ubicaciones y zonas para la TV. */
     suspend fun getProfiles(): List<MonitoredProfile> = coroutineScope {
         val caregiverId = client.auth.currentSessionOrNull()?.user?.id
             ?: error("La sesión ha expirado")
@@ -139,7 +139,7 @@ class MonitoredProfilesRepository {
         }
     }
 
-    // Calcula la distancia en metros entre dos coordenadas.
+    /** Calcula la distancia en metros entre dos coordenadas. */
     private fun distanceMeters(
         latitudeA: Double,
         longitudeA: Double,

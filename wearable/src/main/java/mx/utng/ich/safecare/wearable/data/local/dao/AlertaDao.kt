@@ -1,4 +1,4 @@
-
+﻿
 package mx.utng.ich.safecare.wearable.data.local.dao
 
 import androidx.room.Dao
@@ -11,7 +11,7 @@ import mx.utng.ich.safecare.wearable.data.local.entity.AlertaEntity
 interface AlertaDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    // Guarda una alerta en el almacenamiento local.
+    /** Guarda una alerta en el almacenamiento local. */
     suspend fun insertar(alerta: AlertaEntity): Long
 
     @Query(
@@ -20,10 +20,10 @@ interface AlertaDao {
         ORDER BY fechaHora DESC
         """
     )
-    // Obtiene todas las alertas almacenadas en el reloj.
+    /** Obtiene todas las alertas almacenadas en el reloj. */
     suspend fun obtenerTodas(): List<AlertaEntity>
 
     @Query("DELETE FROM Alertas")
-    // Elimina todas las alertas almacenadas localmente.
+    /** Elimina todas las alertas almacenadas localmente. */
     suspend fun eliminarTodas()
 }

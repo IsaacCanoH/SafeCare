@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.wearable.presentation.geofence
+﻿package mx.utng.ich.safecare.wearable.presentation.geofence
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -28,7 +28,7 @@ import mx.utng.ich.safecare.wearable.data.repository.SupabaseRepository
 
 class GeofenceBroadcastReceiver : BroadcastReceiver() {
 
-    // Atiende eventos del sistema cuando se cruza una geocerca.
+    /** Atiende eventos del sistema cuando se cruza una geocerca. */
     override fun onReceive(context: Context, intent: Intent) {
         val appContext = context.applicationContext
         Log.d(TAG, "Evento de geocerca recibido")
@@ -69,7 +69,7 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         }
     }
 
-    // Guarda y transmite la alerta creada al salir de una zona.
+    /** Guarda y transmite la alerta creada al salir de una zona. */
     private suspend fun saveSafeZoneExitAlert(
         context: Context,
         triggeringLocation: Location?
@@ -138,7 +138,7 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         }
     }
 
-    // Ejecuta la vibración asociada a una salida de zona segura.
+    /** Ejecuta la vibración asociada a una salida de zona segura. */
     private fun triggerVibration(context: Context) {
         val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vibratorManager =
@@ -161,7 +161,7 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         }
     }
 
-    // Abre la pantalla persistente con los datos de la alerta.
+    /** Abre la pantalla persistente con los datos de la alerta. */
     private fun launchAlertActivity(
         context: Context,
         zoneLabel: String?,
@@ -182,7 +182,7 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "GeofenceReceiver"
 
-        // Crea y publica la alerta cuando se sale de una zona segura.
+        /** Crea y publica la alerta cuando se sale de una zona segura. */
         fun handleSafeZoneExit(
             context: Context,
             zoneLabel: String?,

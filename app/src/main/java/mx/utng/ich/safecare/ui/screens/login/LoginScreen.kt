@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.ui.screens.login
+﻿package mx.utng.ich.safecare.ui.screens.login
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -18,7 +18,7 @@ import mx.utng.ich.safecare.ui.viewmodel.AuthState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-// Muestra el formulario que valida e inicia la sesión del cuidador.
+/** Muestra el formulario que valida e inicia la sesión del cuidador. */
 fun LoginScreen(
     authState: AuthState = AuthState.Idle,
     onLoginClick: (String, String) -> Unit = { _, _ -> },
@@ -39,12 +39,12 @@ fun LoginScreen(
         }
     }
 
-    // Comprueba que el correo tenga un formato válido.
+    /** Comprueba que el correo tenga un formato válido. */
     fun validateEmail(mail: String): Boolean {
         return android.util.Patterns.EMAIL_ADDRESS.matcher(mail).matches()
     }
 
-    // Comprueba que la contraseña tenga la longitud mínima.
+    /** Comprueba que la contraseña tenga la longitud mínima. */
     fun validatePassword(pass: String): Boolean {
         return pass.length >= 6
     }

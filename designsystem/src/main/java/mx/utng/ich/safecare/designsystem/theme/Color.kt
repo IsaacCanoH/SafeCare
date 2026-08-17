@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.designsystem.theme
+﻿package mx.utng.ich.safecare.designsystem.theme
 import androidx.compose.ui.graphics.Color
 
 val primaryLight = Color(0xFF4B5C92)

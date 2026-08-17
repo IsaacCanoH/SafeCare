@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.ui.screens.alerts
+﻿package mx.utng.ich.safecare.ui.screens.alerts
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -23,7 +23,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-// Muestra las alertas recibidas y mantiene su contenido actualizado.
+/** Muestra las alertas recibidas y mantiene su contenido actualizado. */
 fun AlertsScreen(viewModel: AlertViewModel) {
     val alerts by viewModel.alerts.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -70,7 +70,7 @@ fun AlertsScreen(viewModel: AlertViewModel) {
 }
 
 @Composable
-// Presenta la información principal de una alerta individual.
+/** Presenta la información principal de una alerta individual. */
 @OptIn(ExperimentalMaterial3Api::class)
 fun AlertItem(item: AlertaConPerfil, onAcknowledge: () -> Unit) {
     if (item.alerta.estado != "ACTIVA") {
@@ -201,7 +201,7 @@ private fun AlertCard(item: AlertaConPerfil) {
     }
 }
 
-// Genera el mensaje visible según el tipo de alerta.
+/** Genera el mensaje visible según el tipo de alerta. */
 fun alertMessage(item: AlertaConPerfil): String {
     val name = item.nombrePerfil?.trim().takeUnless { it.isNullOrEmpty() }
         ?: "Perfil sin nombre"
@@ -212,7 +212,7 @@ fun alertMessage(item: AlertaConPerfil): String {
     }
 }
 
-// Genera el título visible según el tipo de alerta.
+/** Genera el título visible según el tipo de alerta. */
 fun alertTitle(item: AlertaConPerfil): String =
     when (item.alerta.tipoAlerta) {
         "SOS" -> "SOS"

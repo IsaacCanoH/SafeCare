@@ -43,13 +43,25 @@ import mx.utng.ich.safecare.ui.viewmodel.ProfileViewModel
 import mx.utng.ich.safecare.ui.viewmodel.AlertViewModel
 import mx.utng.ich.safecare.ui.viewmodel.LocationViewModel
 
+/**
+ * Pantallas raíz de la aplicación móvil.
+ *
+ * Define los estados de navegación principales: acceso, registro y pantalla principal.
+ */
 enum class Screen {
     LOGIN, REGISTER, MAIN
 }
 
+/**
+ * Composable raíz de la aplicación móvil SafeCare del cuidador.
+ *
+ * Coordina la navegación entre pantallas, crea los ViewModels necesarios,
+ * conserva la pestaña seleccionada del menú inferior, carga los datos al
+ * autenticar, inicia las actualizaciones en tiempo real y conecta cada
+ * pantalla con su respectivo ViewModel.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
-// Coordina la navegación, el estado y las pantallas de la app móvil.
 fun SafeCareApp() {
     val context = LocalContext.current
     val authViewModel: AuthViewModel = viewModel {
@@ -86,7 +98,7 @@ fun SafeCareApp() {
     val alerts by alertViewModel.alerts.collectAsState()
     val activeAlertsCount = alerts.count { it.alerta.estado == "ACTIVA" }
 
-    // Recarga perfiles y zonas para actualizar la configuración visible.
+    /** Recarga perfiles y zonas para actualizar la configuración visible. */
     suspend fun refreshConfiguration() {
         if (isRefreshing) return
         isRefreshing = true

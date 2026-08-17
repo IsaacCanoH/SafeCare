@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.ui.screens.register
+﻿package mx.utng.ich.safecare.ui.screens.register
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -18,7 +18,7 @@ import mx.utng.ich.safecare.ui.viewmodel.AuthState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-// Muestra el formulario que valida y registra un nuevo cuidador.
+/** Muestra el formulario que valida y registra un nuevo cuidador. */
 fun RegisterScreen(
     authState: AuthState = AuthState.Idle,
     onBackClick: () -> Unit = {},
@@ -41,12 +41,12 @@ fun RegisterScreen(
         }
     }
 
-    // Comprueba que el correo tenga un formato válido.
+    /** Comprueba que el correo tenga un formato válido. */
     fun validateEmail(mail: String): Boolean {
         return android.util.Patterns.EMAIL_ADDRESS.matcher(mail).matches()
     }
 
-    // Comprueba que la contraseña tenga la longitud mínima.
+    /** Comprueba que la contraseña tenga la longitud mínima. */
     fun validatePassword(pass: String): Boolean {
         // Mínimo 6 caracteres (estándar de Supabase por defecto)
         return pass.length >= 6

@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.wearable.data.model
+﻿package mx.utng.ich.safecare.wearable.data.model
 
 enum class TipoPerfil {
     MENOR,

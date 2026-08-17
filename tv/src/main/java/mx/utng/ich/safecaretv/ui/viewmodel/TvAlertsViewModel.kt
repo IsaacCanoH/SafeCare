@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.ui.viewmodel
+﻿package mx.utng.ich.safecaretv.ui.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -25,7 +25,7 @@ class TvAlertsViewModel : ViewModel() {
         }
     }
 
-    // Reconoce la alerta actual en Supabase para retirarla de todos los dispositivos.
+    /** Reconoce la alerta actual en Supabase para retirarla de todos los dispositivos. */
     fun acknowledge() {
         _activeAlert.value?.let { alert ->
             viewModelScope.launch {
@@ -41,7 +41,7 @@ class TvAlertsViewModel : ViewModel() {
         }
     }
 
-    // Recarga la alerta más reciente desde el repositorio.
+    /** Recarga la alerta más reciente desde el repositorio. */
     private suspend fun refresh() {
         runCatching { repository.getActiveAlerts() }
             .onSuccess { alerts ->

@@ -40,6 +40,13 @@ import mx.utng.ich.safecare.wearable.presentation.geofence.SafeZoneGeofence
 import mx.utng.ich.safecare.wearable.presentation.sensors.DeviceStatusReader
 import mx.utng.ich.safecare.wearable.data.repository.SupabaseRepository
 
+/**
+ * Servicio en primer plano que constituye el núcleo del monitoreo de ubicación del smartwatch.
+ *
+ * Valida lecturas GPS, conserva un historial local acotado en Room, evalúa las zonas
+ * seguras, actualiza el estado de batería y conexión, y sincroniza periódicamente
+ * el perfil y sus zonas desde Supabase.
+ */
 class LocationTrackingService : Service() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -53,7 +60,7 @@ class LocationTrackingService : Service() {
     private var lastConfigurationSyncMillis = 0L
 
     private val locationListener = object : LocationListener {
-        // Procesa cada ubicación nueva recibida del proveedor GPS.
+        /** Procesa cada ubicación nueva recibida del proveedor GPS. */
         override fun onLocationChanged(location: Location) {
             if (isUsableWatchGpsLocation(location)) {
                 saveLocation(location)
@@ -66,18 +73,18 @@ class LocationTrackingService : Service() {
             }
         }
 
-        // No requiere acción adicional al habilitar un proveedor.
+        /** No requiere acción adicional al habilitar un proveedor. */
         override fun onProviderEnabled(provider: String) = Unit
-        // Registra cuando el proveedor de ubicación se deshabilita.
+        /** Registra cuando el proveedor de ubicación se deshabilita. */
         override fun onProviderDisabled(provider: String) {
             Log.w(TAG, "Proveedor GPS del reloj deshabilitado: $provider")
         }
         @Deprecated("Deprecated in Android")
-        // No usa los cambios de estado heredados del proveedor.
+        /** No usa los cambios de estado heredados del proveedor. */
         override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
     }
 
-    // Inicializa los recursos necesarios para el rastreo continuo.
+    /** Inicializa los recursos necesarios para el rastreo continuo. */
     override fun onCreate() {
         super.onCreate()
         locationManager = getSystemService(LocationManager::class.java)
@@ -86,7 +93,7 @@ class LocationTrackingService : Service() {
         ensureNotificationChannel()
     }
 
-    // Inicia el rastreo y mantiene el servicio activo.
+    /** Inicia el rastreo y mantiene el servicio activo. */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (!hasLocationPermission()) {
             Log.w(TAG, "Servicio de ubicacion detenido: falta ACCESS_FINE_LOCATION")
@@ -101,10 +108,10 @@ class LocationTrackingService : Service() {
         return START_STICKY
     }
 
-    // Declara que este servicio no admite vinculación.
+    /** Declara que este servicio no admite vinculación. */
     override fun onBind(intent: Intent?): IBinder? = null
 
-    // Detiene las actualizaciones de ubicación al cerrar el servicio.
+    /** Detiene las actualizaciones de ubicación al cerrar el servicio. */
     override fun onDestroy() {
         locationManager.removeUpdates(locationListener)
         serviceScope.cancel()
@@ -112,7 +119,7 @@ class LocationTrackingService : Service() {
     }
 
     @SuppressLint("MissingPermission")
-    // Registra el proveedor GPS para recibir ubicaciones periódicas.
+    /** Registra el proveedor GPS para recibir ubicaciones periódicas. */
     private fun startLocationUpdates() {
         if (isTrackingStarted) {
             return
@@ -139,7 +146,7 @@ class LocationTrackingService : Service() {
         }
     }
 
-    // Valida precisión y antigüedad de una ubicación GPS.
+    /** Valida precisión y antigüedad de una ubicación GPS. */
     private fun isUsableWatchGpsLocation(location: Location): Boolean {
         return location.provider == LocationManager.GPS_PROVIDER &&
                 location.latitude in -90.0..90.0 &&
@@ -148,7 +155,7 @@ class LocationTrackingService : Service() {
                 (!location.hasAccuracy() || location.accuracy <= MAX_ACCURACY_METERS)
     }
 
-    // Calcula la antigüedad de una ubicación en milisegundos.
+    /** Calcula la antigüedad de una ubicación en milisegundos. */
     private fun locationAgeMillis(location: Location): Long {
         val elapsedNanos = location.elapsedRealtimeNanos
         if (elapsedNanos <= 0L) return Long.MAX_VALUE
@@ -157,7 +164,7 @@ class LocationTrackingService : Service() {
         ).coerceAtLeast(0L) / 1_000_000L
     }
 
-    // Guarda, sincroniza y publica la ubicación recibida.
+    /** Guarda, sincroniza y publica la ubicación recibida. */
     private fun saveLocation(location: Location) {
         serviceScope.launch {
             val database = DatabaseProvider.getDatabase(applicationContext)
@@ -181,7 +188,7 @@ class LocationTrackingService : Service() {
         }
     }
 
-    // Inicia la actualización periódica del estado del dispositivo.
+    /** Inicia la actualización periódica del estado del dispositivo. */
     private fun startStatusMonitoring() {
         if (isStatusMonitoringStarted) {
             return
@@ -196,7 +203,7 @@ class LocationTrackingService : Service() {
         }
     }
 
-    // Guarda el estado solo cuando detecta cambios relevantes.
+    /** Guarda el estado solo cuando detecta cambios relevantes. */
     private suspend fun saveStatusIfNeeded() {
         val database = DatabaseProvider.getDatabase(applicationContext)
         val smartwatchDao = database.smartwatchDao()
@@ -241,7 +248,7 @@ class LocationTrackingService : Service() {
         Log.d(TAG, "Estado wearable guardado en smartwatch id=$smartwatchId")
     }
 
-    // Actualiza la configuración remota cuando corresponde sincronizarla.
+    /** Actualiza la configuración remota cuando corresponde sincronizarla. */
     private suspend fun synchronizeRemoteConfigurationIfDue(force: Boolean = false) {
         val now = System.currentTimeMillis()
         if (!force && now - lastConfigurationSyncMillis < CONFIGURATION_SYNC_INTERVAL_MILLIS) {
@@ -283,7 +290,7 @@ class LocationTrackingService : Service() {
         }
     }
 
-    // Promueve el rastreo a servicio en primer plano.
+    /** Promueve el rastreo a servicio en primer plano. */
     private fun startAsForegroundService() {
         val notification = createNotification()
 
@@ -298,7 +305,7 @@ class LocationTrackingService : Service() {
         }
     }
 
-    // Crea la notificación persistente del rastreo activo.
+    /** Crea la notificación persistente del rastreo activo. */
     private fun createNotification(): Notification {
         val intent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
@@ -319,7 +326,7 @@ class LocationTrackingService : Service() {
             .build()
     }
 
-    // Crea el canal de la notificación de rastreo si falta.
+    /** Crea el canal de la notificación de rastreo si falta. */
     private fun ensureNotificationChannel() {
         val notificationManager = getSystemService(NotificationManager::class.java)
         val channel = NotificationChannel(
@@ -334,7 +341,7 @@ class LocationTrackingService : Service() {
         notificationManager.createNotificationChannel(channel)
     }
 
-    // Comprueba los permisos antes de solicitar ubicación.
+    /** Comprueba los permisos antes de solicitar ubicación. */
     private fun hasLocationPermission(): Boolean {
         return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
                 PackageManager.PERMISSION_GRANTED
@@ -358,7 +365,7 @@ class LocationTrackingService : Service() {
         private const val CONFIGURATION_SYNC_INTERVAL_MILLIS = 60_000L
         private const val MAX_SMARTWATCH_RECORDS = 10_000
 
-        // Inicia el servicio de rastreo desde cualquier contexto.
+        /** Inicia el servicio de rastreo desde cualquier contexto. */
         fun start(context: Context) {
             val intent = Intent(context, LocationTrackingService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

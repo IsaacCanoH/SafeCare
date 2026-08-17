@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.ui.home
+﻿package mx.utng.ich.safecaretv.ui.home
 
 import android.content.Intent
 import android.net.Uri
@@ -81,7 +81,7 @@ import mx.utng.ich.safecaretv.ui.viewmodel.MonitoredProfilesViewModel
 import mx.utng.ich.safecaretv.ui.viewmodel.ProfilesUiState
 
 @Composable
-// Muestra el panel principal de perfiles y recomendaciones en TV.
+/** Muestra el panel principal de perfiles y recomendaciones en TV. */
 fun TvHomeScreen(
     email: String,
     youTubeViewModel: YouTubeViewModel,
@@ -164,7 +164,7 @@ fun TvHomeScreen(
 }
 
 @Composable
-// Muestra la cuadrícula de perfiles monitoreados disponibles.
+/** Muestra la cuadrícula de perfiles monitoreados disponibles. */
 private fun ProfilesContent(
     state: ProfilesUiState,
     onRetry: () -> Unit,
@@ -222,7 +222,7 @@ private fun ProfilesContent(
 }
 
 @Composable
-// Muestra el resumen seleccionable de un perfil monitoreado.
+/** Muestra el resumen seleccionable de un perfil monitoreado. */
 private fun MonitoredProfileCard(profile: MonitoredProfile, onClick: () -> Unit) {
     var focused by remember { mutableStateOf(false) }
     val statusColor = profile.status.statusColor()
@@ -332,7 +332,7 @@ private fun MonitoredProfileCard(profile: MonitoredProfile, onClick: () -> Unit)
 }
 
 @Composable
-// Muestra una métrica breve dentro de la tarjeta del perfil.
+/** Muestra una métrica breve dentro de la tarjeta del perfil. */
 private fun ProfileMetric(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String
@@ -345,7 +345,7 @@ private fun ProfileMetric(
 }
 
 @Composable
-// Muestra la leyenda de colores para los estados de monitoreo.
+/** Muestra la leyenda de colores para los estados de monitoreo. */
 private fun ProfilesLegend() {
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = 7.dp),
@@ -359,7 +359,7 @@ private fun ProfilesLegend() {
 }
 
 @Composable
-// Muestra un elemento de la leyenda de estados.
+/** Muestra un elemento de la leyenda de estados. */
 private fun LegendItem(label: String, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
@@ -372,7 +372,7 @@ private fun LegendItem(label: String, color: Color) {
     }
 }
 
-// Traduce el estado de monitoreo a una etiqueta corta.
+/** Traduce el estado de monitoreo a una etiqueta corta. */
 private fun MonitoringStatus.statusLabel(): String = when (this) {
     MonitoringStatus.SAFE -> "En zona segura"
     MonitoringStatus.OUTSIDE_SAFE_ZONE -> "Fuera de zona"
@@ -380,7 +380,7 @@ private fun MonitoringStatus.statusLabel(): String = when (this) {
     MonitoringStatus.OFFLINE -> "Sin conexión"
 }
 
-// Define el color asociado a cada estado de monitoreo.
+/** Define el color asociado a cada estado de monitoreo. */
 private fun MonitoringStatus.statusColor(): Color = when (this) {
     MonitoringStatus.SAFE -> Color(0xFF24943A)
     MonitoringStatus.OUTSIDE_SAFE_ZONE -> Color(0xFFF2A900)
@@ -388,7 +388,7 @@ private fun MonitoringStatus.statusColor(): Color = when (this) {
     MonitoringStatus.OFFLINE -> Color(0xFF77718F)
 }
 
-// Selecciona el icono asociado a cada estado de monitoreo.
+/** Selecciona el icono asociado a cada estado de monitoreo. */
 private fun MonitoringStatus.statusIcon() = when (this) {
     MonitoringStatus.SAFE -> Icons.Default.CheckCircle
     MonitoringStatus.OUTSIDE_SAFE_ZONE -> Icons.Default.Error
@@ -397,7 +397,7 @@ private fun MonitoringStatus.statusIcon() = when (this) {
 }
 
 @Composable
-// Muestra el encabezado con las acciones principales del panel.
+/** Muestra el encabezado con las acciones principales del panel. */
 private fun DashboardHeader(
     now: Date,
     onAlertTonesClick: () -> Unit
@@ -470,7 +470,7 @@ private fun DashboardHeader(
 }
 
 @Composable
-// Muestra una acción textual en el encabezado de TV.
+/** Muestra una acción textual en el encabezado de TV. */
 private fun HeaderAction(
     text: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -502,7 +502,7 @@ private fun HeaderAction(
 }
 
 @Composable
-// Muestra recomendaciones de video y su estado de carga.
+/** Muestra recomendaciones de video y su estado de carga. */
 private fun RecommendationsPanel(
     state: YouTubeUiState,
     onRetry: () -> Unit,
@@ -561,7 +561,7 @@ private fun RecommendationsPanel(
 }
 
 @Composable
-// Muestra un video recomendado y permite abrirlo.
+/** Muestra un video recomendado y permite abrirlo. */
 private fun VideoRecommendationItem(
     video: YouTubeVideo,
     onClick: () -> Unit
@@ -640,7 +640,7 @@ private fun VideoRecommendationItem(
 }
 
 @Composable
-// Muestra un mensaje cuando no se pueden cargar recomendaciones.
+/** Muestra un mensaje cuando no se pueden cargar recomendaciones. */
 private fun ErrorRecommendations(
     message: String,
     onRetry: () -> Unit
@@ -669,7 +669,7 @@ private fun ErrorRecommendations(
 }
 
 @Composable
-// Muestra el acceso para ver más contenido en YouTube.
+/** Muestra el acceso para ver más contenido en YouTube. */
 private fun MoreYouTubeButton(onClick: () -> Unit) {
     var focused by remember { mutableStateOf(false) }
     Row(

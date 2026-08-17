@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.ui.alert
+﻿package mx.utng.ich.safecaretv.ui.alert
 
 import android.location.Geocoder
 import androidx.compose.foundation.Canvas
@@ -51,7 +51,7 @@ import mx.utng.ich.safecaretv.data.sound.AlertTonePreferences
 import java.util.Locale
 
 @Composable
-// Muestra una alerta urgente a pantalla completa en la TV.
+/** Muestra una alerta urgente a pantalla completa en la TV. */
 fun TvFullScreenAlert(
     alert: TvAlert,
     profile: MonitoredProfile,
@@ -193,7 +193,7 @@ fun TvFullScreenAlert(
 }
 
 @Composable
-// Genera una dirección legible a partir de las coordenadas.
+/** Genera una dirección legible a partir de las coordenadas. */
 private fun alertAddress(latitude: Double?, longitude: Double?): String {
     val context = LocalContext.current
     val fallback = if (latitude != null && longitude != null) {
@@ -217,7 +217,7 @@ private fun alertAddress(latitude: Double?, longitude: Double?): String {
     return address
 }
 
-// Calcula el tiempo transcurrido desde que se creó la alerta.
+/** Calcula el tiempo transcurrido desde que se creó la alerta. */
 private fun elapsedAlertTime(timestamp: Long, now: Long): String {
     val seconds = ((now - timestamp) / 1_000).coerceAtLeast(0)
     return when {

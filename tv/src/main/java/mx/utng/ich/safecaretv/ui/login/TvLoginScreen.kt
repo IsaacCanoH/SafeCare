@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.ui.login
+﻿package mx.utng.ich.safecaretv.ui.login
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -57,7 +57,7 @@ import mx.utng.ich.safecaretv.ui.theme.SafePurpleLight
 import mx.utng.ich.safecaretv.ui.theme.SafeTextMuted
 
 @Composable
-// Muestra el formulario de inicio de sesión adaptado a TV.
+/** Muestra el formulario de inicio de sesión adaptado a TV. */
 fun TvLoginScreen(
     isLoading: Boolean,
     errorMessage: String?,
@@ -209,7 +209,7 @@ fun TvLoginScreen(
 }
 
 @Composable
-// Muestra la identidad visual de SafeCare en el acceso.
+/** Muestra la identidad visual de SafeCare en el acceso. */
 private fun BrandPanel(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
@@ -255,7 +255,7 @@ private fun BrandPanel(modifier: Modifier = Modifier) {
 }
 
 @Composable
-// Define los colores de los campos de texto para TV.
+/** Define los colores de los campos de texto para TV. */
 private fun tvTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = SafePurple,
     focusedLabelColor = SafePurple,

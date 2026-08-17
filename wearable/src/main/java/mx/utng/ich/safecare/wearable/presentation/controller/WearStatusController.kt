@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.wearable.presentation.controller
+﻿package mx.utng.ich.safecare.wearable.presentation.controller
 
 import android.content.Context
 import android.util.Log
@@ -29,7 +29,7 @@ class WearStatusController(
 
     private var currentUiState = WearHomeUiState()
 
-    // Actualiza en la interfaz el estado de los permisos de ubicación.
+    /** Actualiza en la interfaz el estado de los permisos de ubicación. */
     fun updateLocationPermissionStatus() {
         updateUiState(
             currentUiState.copy(
@@ -39,7 +39,7 @@ class WearStatusController(
         )
     }
 
-    // Genera y publica una alerta SOS con la ubicación disponible.
+    /** Genera y publica una alerta SOS con la ubicación disponible. */
     fun onPanicButtonPressed(
         onRequestLocationPermission: (Array<String>) -> Unit
     ) {
@@ -70,7 +70,7 @@ class WearStatusController(
                 val ubicacionDao = database.ubicacionDao()
                 val smartwatchDao = database.smartwatchDao()
 
-                // 1. Guardar localmente en Room
+                /** 1. Guardar localmente en Room */
                 val batteryLevel = deviceStatusReader.getBatteryLevel()
                 val isOnline = deviceStatusReader.isOnline()
 
@@ -121,7 +121,7 @@ class WearStatusController(
         }
     }
 
-    // Solicita permisos o inicia la lectura de ubicación actual.
+    /** Solicita permisos o inicia la lectura de ubicación actual. */
     fun requestPermissionOrGetLocation(
         onRequestLocationPermission: (Array<String>) -> Unit
     ) {
@@ -145,7 +145,7 @@ class WearStatusController(
         }
     }
 
-    // Continúa el flujo de ubicación tras responder a los permisos.
+    /** Continúa el flujo de ubicación tras responder a los permisos. */
     fun handleLocationPermissionResult(
         permissions: Map<String, Boolean>
     ) {
@@ -177,7 +177,7 @@ class WearStatusController(
         }
     }
 
-    // Lee y publica el estado actual del reloj.
+    /** Lee y publica el estado actual del reloj. */
     private fun updateDeviceStatus() {
         val deviceStatus = deviceStatusReader.getDeviceStatus()
 
@@ -192,7 +192,7 @@ class WearStatusController(
         )
     }
 
-    // Solicita la ubicación actual para actualizar la interfaz.
+    /** Solicita la ubicación actual para actualizar la interfaz. */
     private fun getCurrentLocation() {
         wearLocationReader.getCurrentLocation { updatedLocationText ->
 
@@ -206,7 +206,7 @@ class WearStatusController(
         }
     }
 
-    // Actualiza el estado observable que consume la interfaz Wear.
+    /** Actualiza el estado observable que consume la interfaz Wear. */
     private fun updateUiState(
         newUiState: WearHomeUiState
     ) {

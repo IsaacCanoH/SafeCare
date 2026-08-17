@@ -6,7 +6,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Set of Material typography styles to start with
+/**
+ * Definición de la tipografía Material 3 para la aplicación móvil SafeCare.
+ *
+ * Configura los estilos de texto base utilizados en toda la interfaz,
+ * partiendo de la fuente predeterminada del sistema.
+ */
 val Typography = Typography(
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,

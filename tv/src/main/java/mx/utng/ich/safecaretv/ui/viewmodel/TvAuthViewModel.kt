@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.ui.viewmodel
+﻿package mx.utng.ich.safecaretv.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -31,7 +31,7 @@ class TvAuthViewModel : ViewModel() {
         }
     }
 
-    // Inicia sesión en TV y actualiza el estado de acceso.
+    /** Inicia sesión en TV y actualiza el estado de acceso. */
     fun login(email: String, password: String) {
         val cleanEmail = email.trim()
         if (cleanEmail.isEmpty() || password.isEmpty()) {
@@ -58,14 +58,14 @@ class TvAuthViewModel : ViewModel() {
         }
     }
 
-    // Limpia el mensaje de error mostrado al usuario.
+    /** Limpia el mensaje de error mostrado al usuario. */
     fun dismissError() {
         if (_state.value is TvAuthState.Error) {
             _state.value = TvAuthState.SignedOut
         }
     }
 
-    // Cierra la sesión activa de la aplicación de TV.
+    /** Cierra la sesión activa de la aplicación de TV. */
     fun logout() {
         viewModelScope.launch {
             runCatching { TvSupabaseClient.client.auth.signOut() }
@@ -73,7 +73,7 @@ class TvAuthViewModel : ViewModel() {
         }
     }
 
-    // Traduce errores técnicos a un mensaje comprensible.
+    /** Traduce errores técnicos a un mensaje comprensible. */
     private fun Throwable.toFriendlyMessage(): String = when {
         message?.contains("Invalid login credentials", ignoreCase = true) == true ->
             "Correo o contraseña incorrectos"

@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.ui
+﻿package mx.utng.ich.safecaretv.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,7 +20,7 @@ import mx.utng.ich.safecaretv.ui.viewmodel.TvAlertsViewModel
 import mx.utng.ich.safecaretv.ui.settings.TvAlertTonesScreen
 
 @Composable
-// Coordina la navegación y pantallas de la aplicación para TV.
+/** Coordina la navegación y pantallas de la aplicación para TV. */
 fun SafeCareTvApp(authViewModel: TvAuthViewModel) {
     val authState by authViewModel.state.collectAsStateWithLifecycle()
 

@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.wearable.data.remote
+﻿package mx.utng.ich.safecare.wearable.data.remote
 
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.auth.Auth

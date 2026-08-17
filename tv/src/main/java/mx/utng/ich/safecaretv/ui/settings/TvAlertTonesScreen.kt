@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.ui.settings
+﻿package mx.utng.ich.safecaretv.ui.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -54,7 +54,7 @@ import mx.utng.ich.safecaretv.ui.theme.SafePurpleLight
 import mx.utng.ich.safecaretv.ui.theme.SafeTextMuted
 
 @Composable
-// Permite elegir y previsualizar el tono de alertas de TV.
+/** Permite elegir y previsualizar el tono de alertas de TV. */
 fun TvAlertTonesScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val player = remember { AlertTonePlayer(context.applicationContext) }
@@ -114,7 +114,7 @@ fun TvAlertTonesScreen(onBack: () -> Unit) {
 }
 
 @Composable
-// Muestra una opción de tono y permite seleccionarla.
+/** Muestra una opción de tono y permite seleccionarla. */
 private fun ToneCard(
     tone: AlertTone,
     selected: Boolean,
@@ -194,7 +194,7 @@ private fun ToneCard(
 }
 
 @Composable
-// Muestra el botón para regresar a la pantalla anterior.
+/** Muestra el botón para regresar a la pantalla anterior. */
 private fun BackButton(onClick: () -> Unit) {
     var focused by remember { mutableStateOf(false) }
     Surface(

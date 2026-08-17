@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.data.alert
+﻿package mx.utng.ich.safecaretv.data.alert
 
 data class TvAlert(
     val id: String,

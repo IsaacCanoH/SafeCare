@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.wearable.data.worker
+﻿package mx.utng.ich.safecare.wearable.data.worker
 
 import android.content.Context
 import androidx.work.CoroutineWorker
@@ -11,7 +11,7 @@ import mx.utng.ich.safecare.wearable.presentation.location.WearLocationReader
 import mx.utng.ich.safecare.wearable.presentation.sensors.DeviceStatusReader
 
 class StatusWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
-    // Publica el estado del reloj y agenda su siguiente actualización.
+    /** Publica el estado del reloj y agenda su siguiente actualización. */
     override suspend fun doWork(): Result {
         val reader = DeviceStatusReader(applicationContext)
         val watchId = WearIdentityStore(applicationContext).getOrCreateWatchId()

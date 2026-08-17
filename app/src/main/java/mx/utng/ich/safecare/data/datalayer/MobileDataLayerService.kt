@@ -14,12 +14,26 @@ import mx.utng.ich.safecare.data.local.entity.AlertaEntity
 import mx.utng.ich.safecare.data.local.entity.UbicacionEntity
 import mx.utng.ich.safecare.data.repository.SupabaseRepository
 
+/**
+ * Servicio de escucha de la Wearable Data Layer para la aplicación móvil.
+ *
+ * Recibe elementos de datos publicados por el smartwatch (estado, ubicación y alertas)
+ * y los reenvía al repositorio de Supabase como canal de respaldo.
+ */
 class MobileDataLayerService : WearableListenerService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val repository = SupabaseRepository()
-    // Recibe y procesa los datos nuevos enviados desde el smartwatch.
+
+    /**
+     * Recibe y procesa los datos nuevos enviados desde el smartwatch.
+     *
+     * Congela los elementos del buffer antes de lanzar corrutinas para evitar
+     * errores de "Buffer is closed" al acceder fuera de esta llamada.
+     *
+     * @param events Buffer de eventos de datos recibidos del canal Wearable.
+     */
     override fun onDataChanged(events: DataEventBuffer) {
-        // DataEventBuffer solo es vÃ¡lido durante esta llamada. Congelamos los datos
+        // DataEventBuffer solo es válido durante esta llamada. Congelamos los datos
         // antes de lanzar la corrutina para evitar "Buffer is closed".
         val changedItems = events
             .filter { it.type == DataEvent.TYPE_CHANGED }
@@ -32,9 +46,17 @@ class MobileDataLayerService : WearableListenerService() {
             }
         }
     }
-    // Cancela las tareas pendientes al detener el servicio.
+
+    /**
+     * Cancela las tareas pendientes al detener el servicio.
+     */
     override fun onDestroy() { scope.cancel(); super.onDestroy() }
-    // Guarda el estado, ubicación o alerta recibida según su ruta.
+
+    /**
+     * Guarda el estado, ubicación o alerta recibida según la ruta del elemento de datos.
+     *
+     * @param item Elemento de datos congelado recibido desde el smartwatch.
+     */
     private suspend fun process(item: com.google.android.gms.wearable.DataItem) {
         val data = DataMapItem.fromDataItem(item).dataMap
         when {

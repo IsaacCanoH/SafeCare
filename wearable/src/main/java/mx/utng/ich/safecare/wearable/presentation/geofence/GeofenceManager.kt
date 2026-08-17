@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.wearable.presentation.geofence
+﻿package mx.utng.ich.safecare.wearable.presentation.geofence
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
@@ -39,7 +39,7 @@ class GeofenceManager(context: Context) {
     }
 
     @SuppressLint("MissingPermission")
-    // Reemplaza las geocercas del sistema por las zonas actuales.
+    /** Reemplaza las geocercas del sistema por las zonas actuales. */
     suspend fun replaceGeofences(
         zones: List<SafeZoneGeofence>
     ): Result<Int> = withContext(Dispatchers.IO) {
@@ -82,7 +82,7 @@ class GeofenceManager(context: Context) {
         }
     }
 
-    // Convierte un error de geocerca en un mensaje visible.
+    /** Convierte un error de geocerca en un mensaje visible. */
     private fun Throwable.geofenceMessage(): String {
         val statusCode = (this as? ApiException)?.statusCode
         val statusText = statusCode?.let { GeofenceStatusCodes.getStatusCodeString(it) }

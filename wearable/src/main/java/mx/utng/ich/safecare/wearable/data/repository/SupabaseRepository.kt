@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.wearable.data.repository
+﻿package mx.utng.ich.safecare.wearable.data.repository
 
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
@@ -19,7 +19,7 @@ class SupabaseRepository {
 
     private val client = SupabaseClient.client
 
-    // Sincroniza el estado actual del smartwatch con Supabase.
+    /** Sincroniza el estado actual del smartwatch con Supabase. */
     suspend fun updateSmartWatchStatus(
         numeroSerie: String,
         bateria: Int,
@@ -44,7 +44,7 @@ class SupabaseRepository {
         }
     }
 
-    // Guarda la ubicación generada por el smartwatch en Supabase.
+    /** Guarda la ubicación generada por el smartwatch en Supabase. */
     suspend fun saveLocation(location: UbicacionEntity): Boolean =
         withContext(Dispatchers.IO) {
             try {
@@ -69,7 +69,7 @@ class SupabaseRepository {
             }
         }
 
-    // Guarda una alerta del smartwatch en Supabase.
+    /** Guarda una alerta del smartwatch en Supabase. */
     suspend fun saveAlert(alert: AlertaEntity): Boolean =
         withContext(Dispatchers.IO) {
             try {
@@ -96,7 +96,7 @@ class SupabaseRepository {
             }
         }
 
-    // Obtiene la configuración remota vinculada a este reloj.
+    /** Obtiene la configuración remota vinculada a este reloj. */
     suspend fun fetchLinkedConfiguration(numeroSerie: String): LinkedConfiguration? =
         withContext(Dispatchers.IO) {
             try {

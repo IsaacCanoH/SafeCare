@@ -13,20 +13,49 @@ import mx.utng.ich.safecare.data.repository.SupabaseRepository
 import mx.utng.ich.safecare.util.SecurityUtils
 import android.util.Log
 
+/**
+ * Estado sellado que representa las posibles fases de autenticación del cuidador.
+ */
 sealed class AuthState {
+    /** Sin acción de autenticación en curso. */
     object Idle : AuthState()
+    /** Operación de autenticación en progreso. */
     object Loading : AuthState()
+    /** Autenticación completada exitosamente. */
     object Success : AuthState()
+    /**
+     * Error durante la autenticación.
+     *
+     * @property message Mensaje descriptivo del error para mostrar al usuario.
+     */
     data class Error(val message: String) : AuthState()
 }
 
+/**
+ * ViewModel que gestiona la autenticación del cuidador en SafeCare.
+ *
+ * Mantiene los estados de inicio de sesión y registro, autentica con correo y contraseña
+ * mediante Supabase Auth, crea el usuario de dominio en la base de datos y devuelve
+ * mensajes de error comprensibles a la interfaz de usuario.
+ *
+ * @param supabaseRepository Repositorio para operaciones de persistencia del usuario.
+ */
 class AuthViewModel(
     private val supabaseRepository: SupabaseRepository = SupabaseRepository()
 ) : ViewModel() {
     private val _authState = mutableStateOf<AuthState>(AuthState.Idle)
+    /** Estado observable de la autenticación para la interfaz de usuario. */
     val authState: State<AuthState> = _authState
 
-    // Inicia sesión y actualiza el estado de autenticación.
+    /**
+     * Inicia sesión con correo y contraseña, actualizando el estado de autenticación.
+     *
+     * Fuerza un cierre de sesión previo para limpiar cualquier sesión residual
+     * antes de intentar la autenticación.
+     *
+     * @param email Correo electrónico del cuidador.
+     * @param pass Contraseña del cuidador.
+     */
     fun login(email: String, pass: String) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
@@ -54,7 +83,12 @@ class AuthViewModel(
         }
     }
 
-    // Cierra la sesión local y remota del cuidador.
+    /**
+     * Cierra la sesión local y remota del cuidador.
+     *
+     * Restablece el estado de autenticación a [AuthState.Idle] independientemente
+     * de si el cierre remoto fue exitoso.
+     */
     fun logout() {
         viewModelScope.launch {
             runCatching { SupabaseClient.client.auth.signOut() }
@@ -63,7 +97,16 @@ class AuthViewModel(
         }
     }
 
-    // Crea la cuenta y guarda el perfil del nuevo cuidador.
+    /**
+     * Crea la cuenta en Supabase Auth y guarda el perfil del nuevo cuidador.
+     *
+     * El flujo es: (1) registrar en Supabase Auth, (2) obtener el ID del usuario,
+     * (3) generar el hash de la contraseña y (4) guardar el usuario de dominio.
+     *
+     * @param name Nombre completo del cuidador.
+     * @param email Correo electrónico para la cuenta.
+     * @param pass Contraseña elegida por el cuidador.
+     */
     fun register(name: String, email: String, pass: String) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading

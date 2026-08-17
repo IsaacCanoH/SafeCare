@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.designsystem.theme
+﻿package mx.utng.ich.safecare.designsystem.theme
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

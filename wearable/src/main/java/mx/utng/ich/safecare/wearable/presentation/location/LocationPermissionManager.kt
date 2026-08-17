@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.wearable.presentation.location
+﻿package mx.utng.ich.safecare.wearable.presentation.location
 
 import android.Manifest
 import android.content.Context
@@ -9,12 +9,12 @@ class LocationPermissionManager(
     private val context: Context
 ) {
 
-    // Devuelve los permisos necesarios para obtener ubicación.
+    /** Devuelve los permisos necesarios para obtener ubicación. */
     fun getLocationPermissions(): Array<String> {
         return getForegroundLocationPermissions()
     }
 
-    // Devuelve los permisos de ubicación requeridos en primer plano.
+    /** Devuelve los permisos de ubicación requeridos en primer plano. */
     fun getForegroundLocationPermissions(): Array<String> {
         return arrayOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -22,7 +22,7 @@ class LocationPermissionManager(
         )
     }
 
-    // Devuelve el permiso de ubicación en segundo plano si aplica.
+    /** Devuelve el permiso de ubicación en segundo plano si aplica. */
     fun getBackgroundLocationPermission(): String? {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             Manifest.permission.ACCESS_BACKGROUND_LOCATION
@@ -31,29 +31,29 @@ class LocationPermissionManager(
         }
     }
 
-    // Verifica si se otorgó algún permiso de ubicación.
+    /** Verifica si se otorgó algún permiso de ubicación. */
     fun hasLocationPermission(): Boolean {
         return hasPermission(Manifest.permission.ACCESS_FINE_LOCATION) ||
                 hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
     }
 
-    // Verifica si se otorgó el permiso de ubicación precisa.
+    /** Verifica si se otorgó el permiso de ubicación precisa. */
     fun hasPreciseLocationPermission(): Boolean {
         return hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
     }
 
-    // Verifica si se otorgó ubicación en segundo plano.
+    /** Verifica si se otorgó ubicación en segundo plano. */
     fun hasBackgroundLocationPermission(): Boolean {
         val permission = getBackgroundLocationPermission() ?: return true
         return hasPermission(permission)
     }
 
-    // Verifica si existen permisos suficientes para geocercas.
+    /** Verifica si existen permisos suficientes para geocercas. */
     fun hasGeofencePermissions(): Boolean {
         return hasPreciseLocationPermission() && hasBackgroundLocationPermission()
     }
 
-    // Evalúa el resultado recibido al solicitar ubicación.
+    /** Evalúa el resultado recibido al solicitar ubicación. */
     fun isLocationPermissionGranted(
         permissions: Map<String, Boolean>
     ): Boolean {
@@ -66,7 +66,7 @@ class LocationPermissionManager(
         return fineLocationGranted || coarseLocationGranted
     }
 
-    // Evalúa el resultado recibido al solicitar ubicación precisa.
+    /** Evalúa el resultado recibido al solicitar ubicación precisa. */
     fun isPreciseLocationPermissionGranted(
         permissions: Map<String, Boolean>
     ): Boolean {
@@ -74,7 +74,7 @@ class LocationPermissionManager(
                 hasPreciseLocationPermission()
     }
 
-    // Genera un texto legible sobre el permiso de ubicación.
+    /** Genera un texto legible sobre el permiso de ubicación. */
     fun getLocationPermissionStatusText(): String {
         return when {
             !hasLocationPermission() -> "Permiso de ubicacion pendiente"
@@ -84,7 +84,7 @@ class LocationPermissionManager(
         }
     }
 
-    // Comprueba si un permiso concreto fue otorgado.
+    /** Comprueba si un permiso concreto fue otorgado. */
     private fun hasPermission(permission: String): Boolean {
         return context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
     }

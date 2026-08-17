@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv
+﻿package mx.utng.ich.safecaretv
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -10,7 +10,7 @@ import mx.utng.ich.safecaretv.ui.theme.SafeCareTheme
 import mx.utng.ich.safecaretv.ui.viewmodel.TvAuthViewModel
 
 class MainActivity : ComponentActivity() {
-    // Inicializa la interfaz principal de SafeCare para TV.
+    /** Inicializa la interfaz principal de SafeCare para TV. */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

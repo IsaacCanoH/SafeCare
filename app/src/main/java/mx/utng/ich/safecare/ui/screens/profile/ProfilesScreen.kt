@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.ui.screens.profile
+﻿package mx.utng.ich.safecare.ui.screens.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -21,7 +21,7 @@ import mx.utng.ich.safecare.data.local.entity.PerfilMonitoreadoEntity
 import mx.utng.ich.safecare.ui.viewmodel.ProfileViewModel
 
 @Composable
-// Muestra la lista de perfiles disponibles para el cuidador.
+/** Muestra la lista de perfiles disponibles para el cuidador. */
 fun ProfilesScreen(
     viewModel: ProfileViewModel,
     onAddProfileClick: () -> Unit = {},
@@ -104,7 +104,7 @@ fun ProfilesScreen(
 }
 
 @Composable
-// Muestra las acciones y datos básicos de un perfil.
+/** Muestra las acciones y datos básicos de un perfil. */
 fun ProfileItem(
     profile: PerfilMonitoreadoEntity, 
     onEditClick: () -> Unit,

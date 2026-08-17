@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.wearable.data.datalayer
+﻿package mx.utng.ich.safecare.wearable.data.datalayer
 
 import android.content.Context
 import java.util.UUID
@@ -9,7 +9,7 @@ class WearIdentityStore(context: Context) {
         Context.MODE_PRIVATE
     )
 
-    // Recupera o crea el identificador único de esta instalación.
+    /** Recupera o crea el identificador único de esta instalación. */
     fun getOrCreateWatchId(): String {
         preferences.getString(KEY_WATCH_ID, null)?.let { return it }
         val newId = UUID.randomUUID().toString()

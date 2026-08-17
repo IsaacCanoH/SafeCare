@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.ui.profile
+﻿package mx.utng.ich.safecaretv.ui.profile
 
 import android.graphics.Color as AndroidColor
 import android.location.Geocoder
@@ -73,7 +73,7 @@ import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polygon
 
 @Composable
-// Muestra el detalle de un perfil monitoreado en TV.
+/** Muestra el detalle de un perfil monitoreado en TV. */
 fun TvProfileDetailScreen(profile: MonitoredProfile, onBack: () -> Unit) {
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
     val address = rememberAddress(profile.latitude, profile.longitude)
@@ -129,7 +129,7 @@ fun TvProfileDetailScreen(profile: MonitoredProfile, onBack: () -> Unit) {
 }
 
 @Composable
-// Presenta el mapa o una alternativa cuando no hay ubicación.
+/** Presenta el mapa o una alternativa cuando no hay ubicación. */
 private fun ProfileMap(
     profile: MonitoredProfile,
     updatedText: String,
@@ -177,7 +177,7 @@ private fun ProfileMap(
 }
 
 @Composable
-// Renderiza la última ubicación y zonas del perfil en OpenStreetMap.
+/** Renderiza la última ubicación y zonas del perfil en OpenStreetMap. */
 private fun OsmProfileMap(profile: MonitoredProfile, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val center = remember(profile.latitude, profile.longitude) {
@@ -234,7 +234,7 @@ private fun OsmProfileMap(profile: MonitoredProfile, modifier: Modifier = Modifi
 }
 
 @Composable
-// Muestra métricas resumidas del estado del perfil.
+/** Muestra métricas resumidas del estado del perfil. */
 private fun ProfileSummary(profile: MonitoredProfile, now: Long) {
     val statusColor = profile.status.detailColor()
     Surface(
@@ -297,7 +297,7 @@ private fun ProfileSummary(profile: MonitoredProfile, now: Long) {
 }
 
 @Composable
-// Muestra una métrica individual dentro del resumen del perfil.
+/** Muestra una métrica individual dentro del resumen del perfil. */
 private fun SummaryMetric(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(title, color = SafeTextMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
@@ -311,13 +311,13 @@ private fun SummaryMetric(icon: androidx.compose.ui.graphics.vector.ImageVector,
 }
 
 @Composable
-// Dibuja el separador vertical entre métricas del resumen.
+/** Dibuja el separador vertical entre métricas del resumen. */
 private fun VerticalDivider() {
     Box(Modifier.width(1.dp).height(50.dp).background(Color(0xFFE7E3EC)))
 }
 
 @Composable
-// Muestra los datos personales y ubicación del perfil.
+/** Muestra los datos personales y ubicación del perfil. */
 private fun PersonalInformation(profile: MonitoredProfile, address: String, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -355,7 +355,7 @@ private fun PersonalInformation(profile: MonitoredProfile, address: String, modi
 }
 
 @Composable
-// Muestra una fila de información con etiqueta y valor.
+/** Muestra una fila de información con etiqueta y valor. */
 private fun InformationRow(label: String, value: String) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         Text(label, color = SafeNavy, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(.36f))
@@ -372,7 +372,7 @@ private fun InformationRow(label: String, value: String) {
 }
 
 @Composable
-// Muestra la fotografía o inicial del perfil monitoreado.
+/** Muestra la fotografía o inicial del perfil monitoreado. */
 private fun ProfilePhoto(profile: MonitoredProfile, size: Int) {
     Box(
         Modifier.size(size.dp).clip(CircleShape).background(SafePurpleLight),
@@ -397,7 +397,7 @@ private fun ProfilePhoto(profile: MonitoredProfile, size: Int) {
 }
 
 @Composable
-// Conserva una dirección legible para las coordenadas del perfil.
+/** Conserva una dirección legible para las coordenadas del perfil. */
 private fun rememberAddress(latitude: Double?, longitude: Double?): String {
     val context = LocalContext.current
     val fallback = if (latitude != null && longitude != null) {
@@ -421,7 +421,7 @@ private fun rememberAddress(latitude: Double?, longitude: Double?): String {
     return address
 }
 
-// Convierte una marca de tiempo opcional en tiempo transcurrido.
+/** Convierte una marca de tiempo opcional en tiempo transcurrido. */
 private fun elapsedText(timestamp: Long?, now: Long): String {
     if (timestamp == null) return "Sin actualización"
     val seconds = ((now - timestamp) / 1_000).coerceAtLeast(0)
@@ -434,7 +434,7 @@ private fun elapsedText(timestamp: Long?, now: Long): String {
     }
 }
 
-// Formatea la fecha de nacimiento para mostrarla al usuario.
+/** Formatea la fecha de nacimiento para mostrarla al usuario. */
 private fun formatBirthDate(value: String?): String {
     if (value.isNullOrBlank()) return "Sin registrar"
     return runCatching {
@@ -444,7 +444,7 @@ private fun formatBirthDate(value: String?): String {
     }.getOrDefault(value)
 }
 
-// Traduce el tipo técnico de perfil a una etiqueta visible.
+/** Traduce el tipo técnico de perfil a una etiqueta visible. */
 private fun profileTypeLabel(value: String): String = when (value.lowercase()) {
     "menor" -> "Menor de edad"
     "adulto_mayor" -> "Adulto mayor"
@@ -452,7 +452,7 @@ private fun profileTypeLabel(value: String): String = when (value.lowercase()) {
     else -> value.replace('_', ' ').replaceFirstChar { it.uppercase() }
 }
 
-// Traduce el estado de monitoreo para la vista de detalle.
+/** Traduce el estado de monitoreo para la vista de detalle. */
 private fun MonitoringStatus.detailLabel(): String = when (this) {
     MonitoringStatus.SAFE -> "En zona segura"
     MonitoringStatus.OUTSIDE_SAFE_ZONE -> "Fuera de zona"
@@ -460,7 +460,7 @@ private fun MonitoringStatus.detailLabel(): String = when (this) {
     MonitoringStatus.OFFLINE -> "Sin conexión"
 }
 
-// Define el color visual del estado de monitoreo.
+/** Define el color visual del estado de monitoreo. */
 private fun MonitoringStatus.detailColor(): Color = when (this) {
     MonitoringStatus.SAFE -> Color(0xFF24943A)
     MonitoringStatus.OUTSIDE_SAFE_ZONE -> Color(0xFFE18700)
@@ -468,7 +468,7 @@ private fun MonitoringStatus.detailColor(): Color = when (this) {
     MonitoringStatus.OFFLINE -> Color(0xFF77718F)
 }
 
-// Selecciona el icono que representa el estado de monitoreo.
+/** Selecciona el icono que representa el estado de monitoreo. */
 private fun MonitoringStatus.detailIcon() = when (this) {
     MonitoringStatus.SAFE -> Icons.Default.CheckCircle
     MonitoringStatus.OUTSIDE_SAFE_ZONE -> Icons.Default.Error

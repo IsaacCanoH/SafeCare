@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.ui.theme
+﻿package mx.utng.ich.safecaretv.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.ui.screens.zone
+﻿package mx.utng.ich.safecare.ui.screens.zone
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-// Permite definir y guardar una nueva zona segura en el mapa.
+/** Permite definir y guardar una nueva zona segura en el mapa. */
 fun CreateSafeZoneScreen(
     viewModel: SafeZoneViewModel,
     profiles: List<PerfilMonitoreadoEntity> = emptyList(),
@@ -49,7 +49,7 @@ fun CreateSafeZoneScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Referencia persistente al overlay del círculo para poder actualizarlo
+    /** Referencia persistente al overlay del círculo para poder actualizarlo */
     var mapViewInstance by remember { mutableStateOf<MapView?>(null) }
 
     // Efecto para actualizar el círculo cuando cambie el radio o el punto central
@@ -180,14 +180,14 @@ fun CreateSafeZoneScreen(
                     onMapReady = { mapView ->
                         mapViewInstance = mapView
                         
-                        // Añadir gestor de eventos de toque
+                        /** Añadir gestor de eventos de toque */
                         val eventsOverlay = MapEventsOverlay(object : MapEventsReceiver {
-                            // Usa el toque para seleccionar el centro de la zona.
+                            /** Usa el toque para seleccionar el centro de la zona. */
                             override fun singleTapConfirmedHelper(p: GeoPoint): Boolean {
                                 centerPoint = p // Esto disparará el LaunchedEffect
                                 return true
                             }
-                            // Ignora las pulsaciones prolongadas del mapa.
+                            /** Ignora las pulsaciones prolongadas del mapa. */
                             override fun longPressHelper(p: GeoPoint): Boolean = false
                         })
                         mapView.overlays.add(eventsOverlay)

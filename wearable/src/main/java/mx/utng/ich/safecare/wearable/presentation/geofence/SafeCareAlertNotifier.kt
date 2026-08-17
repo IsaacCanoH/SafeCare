@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.wearable.presentation.geofence
+﻿package mx.utng.ich.safecare.wearable.presentation.geofence
 
 import android.Manifest
 import android.app.Notification
@@ -17,7 +17,7 @@ import mx.utng.ich.safecare.wearable.presentation.AlertActivity
 
 object SafeCareAlertNotifier {
 
-    // Muestra la notificación de salida de una zona segura.
+    /** Muestra la notificación de salida de una zona segura. */
     fun showSafeZoneExitNotification(
         context: Context,
         zoneLabel: String? = null,
@@ -42,7 +42,7 @@ object SafeCareAlertNotifier {
         )
     }
 
-    // Muestra una notificación cuando falla una geocerca.
+    /** Muestra una notificación cuando falla una geocerca. */
     fun showGeofenceErrorNotification(
         context: Context,
         errorMessage: String
@@ -60,7 +60,7 @@ object SafeCareAlertNotifier {
         )
     }
 
-    // Muestra una notificación para una alerta enviada por el cuidador.
+    /** Muestra una notificación para una alerta enviada por el cuidador. */
     fun showCustomAlertNotification(
         context: Context,
         message: String
@@ -79,14 +79,14 @@ object SafeCareAlertNotifier {
         )
     }
 
-    // Elimina la notificación activa de salida de zona segura.
+    /** Elimina la notificación activa de salida de zona segura. */
     fun dismissSafeZoneExitNotification(context: Context) {
         val notificationManager =
             context.applicationContext.getSystemService(NotificationManager::class.java)
         notificationManager.cancel(SAFE_ZONE_EXIT_NOTIFICATION_ID)
     }
 
-    // Construye y publica una notificación de alerta en el reloj.
+    /** Construye y publica una notificación de alerta en el reloj. */
     private fun showNotification(
         context: Context,
         notificationId: Int,
@@ -149,14 +149,14 @@ object SafeCareAlertNotifier {
         return true
     }
 
-    // Verifica si la app puede publicar notificaciones.
+    /** Verifica si la app puede publicar notificaciones. */
     private fun canPostNotifications(context: Context): Boolean {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
                 PackageManager.PERMISSION_GRANTED
     }
 
-    // Crea el canal de notificaciones si aún no existe.
+    /** Crea el canal de notificaciones si aún no existe. */
     private fun ensureNotificationChannel(notificationManager: NotificationManager) {
         val channel = NotificationChannel(
             CHANNEL_ID,

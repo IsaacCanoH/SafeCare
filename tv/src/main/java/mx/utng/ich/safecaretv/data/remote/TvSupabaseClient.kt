@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.data.remote
+﻿package mx.utng.ich.safecaretv.data.remote
 
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient

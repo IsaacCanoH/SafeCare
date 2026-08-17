@@ -19,18 +19,36 @@ import mx.utng.ich.safecare.data.local.entity.AlertaEntity
 import mx.utng.ich.safecare.data.remote.SupabaseClient
 import mx.utng.ich.safecare.data.repository.SupabaseRepository
 
+/**
+ * ViewModel que gestiona las alertas de seguridad en la aplicación móvil del cuidador.
+ *
+ * Consulta alertas de Supabase, las relaciona con el nombre del perfil que las generó,
+ * se suscribe a inserciones y cambios de la tabla `Alerta` mediante Supabase Realtime
+ * y permite reconocer alertas y enviar alertas personalizadas al reloj.
+ *
+ * @param context Contexto de Android para inicializar el repositorio de la Data Layer.
+ * @param repository Repositorio de Supabase para operaciones de persistencia.
+ */
 class AlertViewModel(
     context: Context,
     private val repository: SupabaseRepository = SupabaseRepository()
 ) : ViewModel() {
     private val wearRepository = WearDataLayerRepository(context.applicationContext)
     private val _alerts = MutableStateFlow<List<AlertaConPerfil>>(emptyList())
+    /** Flujo observable con las alertas asociadas al nombre del perfil que las generó. */
     val alerts: StateFlow<List<AlertaConPerfil>> = _alerts
     private val _isLoading = MutableStateFlow(false)
+    /** Flujo observable que indica si se están cargando alertas. */
     val isLoading: StateFlow<Boolean> = _isLoading
     private var realtimeJob: Job? = null
 
-    // Carga las alertas junto con el nombre de cada perfil.
+    /**
+     * Carga las alertas del cuidador junto con el nombre de cada perfil asociado.
+     *
+     * Las alertas se ordenan de la más reciente a la más antigua.
+     *
+     * @return [Job] de la corrutina lanzada, o `null` si no hay sesión activa.
+     */
     fun refreshAlerts(): Job? {
         val caregiverId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: return null
         return viewModelScope.launch {
@@ -45,7 +63,12 @@ class AlertViewModel(
         }
     }
 
-    // Escucha nuevas alertas remotas y refresca la pantalla.
+    /**
+     * Escucha nuevas alertas remotas mediante Supabase Realtime y refresca la pantalla.
+     *
+     * Se suscribe al canal de la tabla `Alerta` para recibir inserciones y actualizaciones
+     * en tiempo real. Solo inicia una suscripción si no hay una activa.
+     */
     fun startRealtimeUpdates() {
         if (realtimeJob != null) return
         val caregiverId = SupabaseClient.client.auth.currentSessionOrNull()?.user?.id ?: return
@@ -67,7 +90,13 @@ class AlertViewModel(
         }
     }
 
-    // Reconoce una alerta para ocultarla de los avisos pendientes en todos los dispositivos.
+    /**
+     * Reconoce una alerta para ocultarla de los avisos pendientes en todos los dispositivos.
+     *
+     * Marca la alerta como "ATENDIDA" en Supabase y recarga la lista de alertas.
+     *
+     * @param alertId Identificador único de la alerta a reconocer.
+     */
     fun acknowledgeAlert(alertId: String) {
         viewModelScope.launch {
             runCatching {
@@ -82,7 +111,16 @@ class AlertViewModel(
         }
     }
 
-    // Envía una alerta personalizada al reloj del perfil elegido.
+    /**
+     * Envía una alerta personalizada al reloj del perfil elegido.
+     *
+     * Guarda la alerta en Supabase, busca el smartwatch vinculado al perfil
+     * y le envía la alerta a través de la Wearable Data Layer.
+     *
+     * @param profileId Identificador del perfil monitoreado destino.
+     * @param message Mensaje de texto de la alerta personalizada.
+     * @param onResult Callback con el resultado de la operación.
+     */
     fun sendCustomAlert(profileId: String, message: String, onResult: (Result<Unit>) -> Unit) {
         val cleanMessage = message.trim()
         if (cleanMessage.isEmpty()) return onResult(Result.failure(IllegalArgumentException("Escribe un mensaje para la alerta")))

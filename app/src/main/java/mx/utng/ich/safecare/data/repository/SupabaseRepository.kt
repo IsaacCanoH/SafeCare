@@ -25,11 +25,24 @@ import java.text.SimpleDateFormat
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/**
+ * Repositorio central de datos de la aplicación móvil del cuidador.
+ *
+ * Encapsula todas las operaciones de lectura y escritura contra Supabase,
+ * incluyendo la gestión de ubicaciones, alertas, usuarios, perfiles monitoreados
+ * y zonas seguras. También traduce las columnas de Supabase a los modelos Kotlin
+ * usados por los ViewModels y la interfaz de usuario.
+ */
 class SupabaseRepository {
 
     private val client = SupabaseClient.client
 
-    // Guarda o actualiza la ubicación recibida en Supabase.
+    /**
+     * Guarda o actualiza la ubicación recibida en Supabase.
+     *
+     * @param location Entidad de ubicación con coordenadas, timestamp e identificador del smartwatch.
+     * @return `true` si la operación fue exitosa, `false` si ocurrió un error.
+     */
     suspend fun saveLocation(location: UbicacionEntity): Boolean = withContext(Dispatchers.IO) {
         try {
             val locationData = buildJsonObject {
@@ -49,7 +62,12 @@ class SupabaseRepository {
         }
     }
 
-    // Guarda o actualiza una alerta en Supabase.
+    /**
+     * Guarda o actualiza una alerta en Supabase.
+     *
+     * @param alert Entidad de alerta con tipo, descripción, estado y perfil asociado.
+     * @return `true` si la operación fue exitosa, `false` si ocurrió un error.
+     */
     suspend fun saveAlert(alert: AlertaEntity): Boolean = withContext(Dispatchers.IO) {
         try {
             val alertData = buildJsonObject {
@@ -71,7 +89,12 @@ class SupabaseRepository {
         }
     }
 
-    // Marca una alerta como atendida para todos los dispositivos del cuidador.
+    /**
+     * Marca una alerta como atendida para todos los dispositivos del cuidador.
+     *
+     * @param alertId Identificador único de la alerta a reconocer.
+     * @return `true` si la actualización fue exitosa, `false` si ocurrió un error.
+     */
     suspend fun acknowledgeAlert(alertId: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val updateData = buildJsonObject {
@@ -87,7 +110,12 @@ class SupabaseRepository {
         }
     }
 
-    // Registra los datos del cuidador en la base remota.
+    /**
+     * Registra los datos del cuidador en la base remota.
+     *
+     * @param usuario Entidad con los datos del cuidador a registrar.
+     * @return `true` si la inserción fue exitosa, `false` si ocurrió un error.
+     */
     suspend fun saveUser(usuario: UsuarioEntity): Boolean = withContext(Dispatchers.IO) {
         try {
             val userJson = buildJsonObject {
@@ -107,7 +135,20 @@ class SupabaseRepository {
         }
     }
 
-    // Crea un perfil monitoreado y vincula su reloj si existe.
+    /**
+     * Crea un perfil monitoreado y vincula su reloj si existe.
+     *
+     * Mapea el tipo amigable de perfil al valor almacenado en la base de datos
+     * y opcionalmente crea el registro del smartwatch asociado.
+     *
+     * @param nombre Nombre completo de la persona monitoreada.
+     * @param edad Edad de la persona.
+     * @param tipo Tipo de perfil en formato amigable ("Menor de edad", "Adulto mayor", "Cuidador").
+     * @param idCuidador Identificador del cuidador responsable.
+     * @param numeroSerie Número de serie del smartwatch a vincular, o `null` si no tiene.
+     * @param fechaNacimiento Fecha de nacimiento en formato texto, o `null`.
+     * @return Identificador del perfil creado, o `null` si ocurrió un error.
+     */
     suspend fun createProfile(
         nombre: String, 
         edad: Int, 
@@ -157,7 +198,15 @@ class SupabaseRepository {
         }
     }
 
-    // Actualiza los datos editables de un perfil monitoreado.
+    /**
+     * Actualiza los datos editables de un perfil monitoreado.
+     *
+     * @param idPerfil Identificador del perfil a actualizar.
+     * @param nombre Nuevo nombre de la persona monitoreada.
+     * @param edad Nueva edad de la persona.
+     * @param fechaNacimiento Nueva fecha de nacimiento en formato texto, o `null`.
+     * @return `true` si la actualización fue exitosa, `false` si ocurrió un error.
+     */
     suspend fun updateProfile(
         idPerfil: String,
         nombre: String,
@@ -190,7 +239,14 @@ class SupabaseRepository {
         }
     }
 
-    // Elimina un perfil y el reloj que tenga vinculado.
+    /**
+     * Elimina un perfil y el reloj que tenga vinculado.
+     *
+     * Primero intenta eliminar el smartwatch asociado y luego el perfil.
+     *
+     * @param idPerfil Identificador del perfil a eliminar.
+     * @return `true` si la eliminación fue exitosa, `false` si ocurrió un error.
+     */
     suspend fun deleteProfile(idPerfil: String): Boolean = withContext(Dispatchers.IO) {
         try {
             // Primero intentamos borrar el smartwatch vinculado si existe (dependiendo de tus FK)
@@ -212,7 +268,19 @@ class SupabaseRepository {
         }
     }
 
-    // Crea una zona segura y sus relaciones con los perfiles seleccionados de forma atÃ³mica.
+    /**
+     * Crea una zona segura y sus relaciones con los perfiles seleccionados de forma atómica.
+     *
+     * Utiliza una función RPC de Supabase para garantizar la atomicidad de la operación.
+     *
+     * @param idZona Identificador único para la nueva zona segura.
+     * @param nombre Nombre descriptivo de la zona.
+     * @param lat Latitud del centro de la zona.
+     * @param lng Longitud del centro de la zona.
+     * @param radio Radio de la zona en metros.
+     * @param profileIds Lista de identificadores de perfiles a asignar a la zona.
+     * @return `true` si la creación fue exitosa, `false` si ocurrió un error.
+     */
     suspend fun createSafeZone(
         idZona: String,
         nombre: String,
@@ -233,7 +301,17 @@ class SupabaseRepository {
         }
     }
 
-    // Actualiza la ubicación, radio o estado de una zona segura.
+    /**
+     * Actualiza la ubicación, radio o estado de una zona segura existente.
+     *
+     * @param idZona Identificador de la zona a actualizar.
+     * @param nombre Nuevo nombre de la zona.
+     * @param lat Nueva latitud del centro.
+     * @param lng Nueva longitud del centro.
+     * @param radio Nuevo radio en metros.
+     * @param profileIds Lista actualizada de perfiles asignados a la zona.
+     * @return `true` si la actualización fue exitosa, `false` si ocurrió un error.
+     */
     suspend fun updateSafeZone(
         idZona: String,
         nombre: String,
@@ -254,7 +332,13 @@ class SupabaseRepository {
         }
     }
 
-    // Activa o desactiva el monitoreo de una zona segura.
+    /**
+     * Activa o desactiva el monitoreo de una zona segura.
+     *
+     * @param idZona Identificador de la zona a modificar.
+     * @param activa `true` para activar el monitoreo, `false` para desactivarlo.
+     * @return `true` si la operación fue exitosa, `false` si ocurrió un error.
+     */
     suspend fun toggleSafeZoneStatus(idZona: String, activa: Boolean): Boolean = withContext(Dispatchers.IO) {
         try {
             val updateData = buildJsonObject {
@@ -272,7 +356,15 @@ class SupabaseRepository {
         }
     }
 
-    // Sincroniza la batería y conexión actual del smartwatch.
+    /**
+     * Sincroniza la batería y conexión actual del smartwatch en Supabase.
+     *
+     * @param numeroSerie Número de serie del reloj a actualizar.
+     * @param bateria Nivel de batería actual (0-100).
+     * @param conexion Estado de conexión actual ("online" u "offline").
+     * @param ultimaConexion Marca de tiempo de la última conexión registrada.
+     * @return `true` si la sincronización fue exitosa, `false` si ocurrió un error.
+     */
     suspend fun updateSmartWatchStatus(
         numeroSerie: String,
         bateria: Int,
@@ -295,7 +387,12 @@ class SupabaseRepository {
         }
     }
 
-    // Obtiene los perfiles asociados al cuidador autenticado.
+    /**
+     * Obtiene los perfiles asociados al cuidador autenticado.
+     *
+     * @param caregiverId Identificador del cuidador en Supabase Auth.
+     * @return Lista de [PerfilMonitoreadoEntity] del cuidador.
+     */
     suspend fun fetchProfilesForCaregiver(caregiverId: String): List<PerfilMonitoreadoEntity> =
         withContext(Dispatchers.IO) {
             client.postgrest["PerfilMonitoreado"].select {
@@ -314,7 +411,15 @@ class SupabaseRepository {
             }
         }
 
-    // Obtiene cada zona una vez, con todos los perfiles del cuidador a los que estÃ¡ asignada.
+    /**
+     * Obtiene cada zona una vez, con todos los perfiles del cuidador a los que está asignada.
+     *
+     * Consulta la tabla intermedia `ZonaSeguraPerfil` para construir la relación
+     * muchos a muchos entre zonas y perfiles monitoreados.
+     *
+     * @param caregiverId Identificador del cuidador en Supabase Auth.
+     * @return Lista de [ZonaSeguraEntity] con los perfiles asignados a cada zona.
+     */
     suspend fun fetchSafeZonesForCaregiver(caregiverId: String): List<ZonaSeguraEntity> =
         withContext(Dispatchers.IO) {
             val profileIds = client.postgrest["PerfilMonitoreado"].select(Columns.list("idPerfil")) {
@@ -347,7 +452,12 @@ class SupabaseRepository {
             }
         }
 
-    // Obtiene las alertas generadas por los perfiles del cuidador.
+    /**
+     * Obtiene las alertas generadas por los perfiles del cuidador.
+     *
+     * @param caregiverId Identificador del cuidador en Supabase Auth.
+     * @return Lista de [AlertaEntity] asociadas a los perfiles del cuidador.
+     */
     suspend fun fetchAlertsForCaregiver(caregiverId: String): List<AlertaEntity> =
         withContext(Dispatchers.IO) {
             val profileIds = client.postgrest["PerfilMonitoreado"].select(Columns.list("idPerfil")) {
@@ -370,7 +480,15 @@ class SupabaseRepository {
             }
         }
 
-    // Obtiene la última ubicación disponible de cada perfil.
+    /**
+     * Obtiene la última ubicación disponible de cada perfil monitoreado.
+     *
+     * Consulta los smartwatches vinculados y obtiene la ubicación más reciente
+     * de cada uno para alimentar el mapa en tiempo real.
+     *
+     * @param caregiverId Identificador del cuidador en Supabase Auth.
+     * @return Lista de [LatestProfileLocation] con la última posición de cada perfil.
+     */
     suspend fun fetchLatestLocationsForCaregiver(caregiverId: String): List<LatestProfileLocation> =
         withContext(Dispatchers.IO) {
             val profiles = client.postgrest["PerfilMonitoreado"].select(Columns.list("idPerfil")) {
@@ -412,14 +530,26 @@ class SupabaseRepository {
             }
         }
 
-    // Busca el número de serie del reloj vinculado al perfil.
+    /**
+     * Busca el número de serie del reloj vinculado al perfil.
+     *
+     * @param profileId Identificador del perfil monitoreado.
+     * @return Número de serie del smartwatch, o `null` si no tiene uno vinculado.
+     */
     suspend fun fetchWatchSerial(profileId: String): String? = withContext(Dispatchers.IO) {
         client.postgrest["SmartWatch"].select(Columns.list("numeroSerie")) {
             filter { eq("idPerfil", profileId) }
         }.decodeList<WatchSerialRow>().firstOrNull()?.numeroSerie
     }
 
-    // Convierte una fecha válida al formato requerido por Supabase.
+    /**
+     * Convierte una fecha válida al formato requerido por Supabase (yyyy-MM-dd).
+     *
+     * Soporta los formatos de entrada "dd/MM/yyyy" y "yyyy-MM-dd".
+     *
+     * @param value Cadena con la fecha a formatear, o `null`.
+     * @return Fecha en formato "yyyy-MM-dd", o `null` si el valor es inválido o nulo.
+     */
     private fun formatBirthDate(value: String?): String? {
         if (value.isNullOrBlank()) return null
 
@@ -437,9 +567,11 @@ class SupabaseRepository {
         }
     }
 
+    /** Fila auxiliar para decodificar el identificador de perfil desde Supabase. */
     @Serializable
     private data class ProfileIdRow(@SerialName("idPerfil") val id: String)
 
+    /** Fila auxiliar para decodificar un perfil monitoreado completo desde Supabase. */
     @Serializable
     private data class ProfileRow(
         @SerialName("idPerfil") val id: String,
@@ -452,6 +584,7 @@ class SupabaseRepository {
         @SerialName("idCuidador") val idCuidador: String
     )
 
+    /** Fila auxiliar para decodificar una zona segura desde Supabase. */
     @Serializable
     private data class SafeZoneRow(
         @SerialName("idZona") val id: String,
@@ -463,12 +596,14 @@ class SupabaseRepository {
         @SerialName("idPerfil") val idPerfil: String
     )
 
+    /** Fila auxiliar para decodificar la relación zona-perfil desde Supabase. */
     @Serializable
     private data class SafeZoneProfileRow(
         @SerialName("idZona") val zoneId: String,
         @SerialName("idPerfil") val profileId: String
     )
 
+    /** Fila auxiliar para decodificar una alerta desde Supabase. */
     @Serializable
     private data class AlertRow(
         @SerialName("idAlerta") val id: String,
@@ -480,6 +615,7 @@ class SupabaseRepository {
         @SerialName("idUbicacion") val idUbicacion: String? = null
     )
 
+    /** Fila auxiliar para decodificar un smartwatch desde Supabase. */
     @Serializable
     private data class WatchRow(
         @SerialName("idSmartwatch") val id: String? = null,
@@ -487,9 +623,11 @@ class SupabaseRepository {
         @SerialName("idPerfil") val idPerfil: String? = null
     )
 
+    /** Fila auxiliar para obtener solo el número de serie de un smartwatch. */
     @Serializable
     private data class WatchSerialRow(@SerialName("numeroSerie") val numeroSerie: String? = null)
 
+    /** Fila auxiliar para decodificar una ubicación desde Supabase. */
     @Serializable
     private data class LocationRow(
         @SerialName("idUbicacion") val id: String,
@@ -499,6 +637,17 @@ class SupabaseRepository {
         @SerialName("idSmartwatch") val idSmartwatch: String
     )
 
+    /**
+     * Construye los parámetros JSON para las funciones RPC de creación y actualización de zonas seguras.
+     *
+     * @param idZona Identificador de la zona.
+     * @param nombre Nombre de la zona.
+     * @param latitud Latitud del centro de la zona.
+     * @param longitud Longitud del centro de la zona.
+     * @param radio Radio en metros.
+     * @param profileIds Lista de identificadores de perfiles a vincular.
+     * @return Objeto JSON con los parámetros para la función RPC.
+     */
     private fun safeZoneMutationParameters(
         idZona: String,
         nombre: String,

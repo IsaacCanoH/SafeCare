@@ -14,8 +14,19 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polygon
 
+/**
+ * Composable que muestra un mapa interactivo de OpenStreetMap mediante OsmDroid.
+ *
+ * Inicializa el mapa con el centro y nivel de zoom indicados, habilita controles
+ * multitáctiles y entrega la vista configurada a través del callback [onMapReady]
+ * para agregar marcadores o zonas.
+ *
+ * @param modifier Modificador de Compose para ajustar tamaño y diseño del mapa.
+ * @param center Punto geográfico central del mapa al iniciar.
+ * @param zoomLevel Nivel de zoom inicial del mapa.
+ * @param onMapReady Callback invocado cuando el mapa está listo para recibir overlays.
+ */
 @Composable
-// Muestra un mapa de OpenStreetMap y entrega la vista ya configurada.
 fun OsmMapView(
     modifier: Modifier = Modifier,
     center: GeoPoint = GeoPoint(21.1526, -100.9312),
@@ -56,8 +67,15 @@ fun OsmMapView(
     )
 }
 
-// Agrega un marcador simple en las coordenadas indicadas.
-// Los marcadores deben agregarse despuÃ©s de los perÃ­metros para quedar por encima de ellos.
+/**
+ * Agrega un marcador simple en las coordenadas indicadas sobre el mapa.
+ *
+ * Los marcadores deben agregarse después de los perímetros para quedar
+ * visualmente por encima de ellos en la pila de overlays.
+ *
+ * @param point Coordenadas geográficas donde se coloca el marcador.
+ * @param title Título descriptivo del marcador.
+ */
 fun MapView.addSimpleMarker(point: GeoPoint, title: String) {
     val marker = Marker(this)
     marker.position = point
@@ -67,7 +85,14 @@ fun MapView.addSimpleMarker(point: GeoPoint, title: String) {
     this.invalidate()
 }
 
-// Dibuja el perímetro circular de una zona segura.
+/**
+ * Dibuja el perímetro circular de una zona segura sobre el mapa.
+ *
+ * @param center Centro geográfico de la zona segura.
+ * @param radiusInMeters Radio de la zona en metros.
+ * @param color Color ARGB para el relleno y borde del círculo.
+ * @param title Título descriptivo de la zona segura.
+ */
 fun MapView.addSafeZoneCircle(
     center: GeoPoint,
     radiusInMeters: Double,

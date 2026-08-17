@@ -13,6 +13,16 @@ import mx.utng.ich.safecare.data.local.entity.ZonaSeguraEntity
 import org.json.JSONArray
 import org.json.JSONObject
 
+/**
+ * Representa un dispositivo Wear OS disponible para vincular.
+ *
+ * @property nodeId Identificador del nodo en la red Wearable Data Layer.
+ * @property watchInstallationId Identificador único de instalación del reloj.
+ * @property displayName Nombre visible del dispositivo.
+ * @property model Modelo del hardware del reloj.
+ * @property batteryLevel Nivel de batería reportado por el reloj (0-100), o -1 si no está disponible.
+ * @property isNearby Indica si el dispositivo se encuentra cerca del teléfono.
+ */
 data class AvailableWearDevice(
     val nodeId: String,
     val watchInstallationId: String,
@@ -22,12 +32,27 @@ data class AvailableWearDevice(
     val isNearby: Boolean
 )
 
+/**
+ * Repositorio para la comunicación con dispositivos Wear OS mediante la Wearable Data Layer.
+ *
+ * Permite descubrir relojes cercanos, vincular y desvincular perfiles monitoreados,
+ * sincronizar zonas seguras y enviar alertas personalizadas al smartwatch.
+ *
+ * @param context Contexto de Android utilizado para obtener los clientes de Wearable.
+ */
 class WearDataLayerRepository(context: Context) {
     private val appContext = context.applicationContext
     private val capabilityClient = Wearable.getCapabilityClient(appContext)
     private val messageClient = Wearable.getMessageClient(appContext)
 
-    // Detecta relojes cercanos que pueden vincularse a un perfil.
+    /**
+     * Detecta relojes cercanos que pueden vincularse a un perfil.
+     *
+     * Consulta la capacidad [CAPABILITY_WATCH] para encontrar nodos alcanzables
+     * y solicita a cada uno su información de dispositivo.
+     *
+     * @return Lista de [AvailableWearDevice] ordenada por cercanía y nombre.
+     */
     suspend fun discoverAvailableWatches(): List<AvailableWearDevice> =
         withContext(Dispatchers.IO) {
             val capability = Tasks.await(
@@ -66,7 +91,13 @@ class WearDataLayerRepository(context: Context) {
             )
         }
 
-    // Envía al reloj los datos del perfil que se va a monitorear.
+    /**
+     * Envía al reloj los datos del perfil que se va a monitorear.
+     *
+     * @param device Dispositivo Wear OS destino de la vinculación.
+     * @param profile Perfil monitoreado que se vinculará al reloj.
+     * @return [Result] exitoso si el reloj acepta, o con error si rechaza la vinculación.
+     */
     suspend fun linkProfile(
         device: AvailableWearDevice,
         profile: PerfilMonitoreadoEntity
@@ -89,7 +120,14 @@ class WearDataLayerRepository(context: Context) {
         }
     }
 
-    // Sincroniza las zonas seguras activas con el reloj.
+    /**
+     * Sincroniza las zonas seguras activas con el reloj.
+     *
+     * @param nodeId Identificador del nodo Wear OS destino.
+     * @param profileId Identificador del perfil monitoreado al que pertenecen las zonas.
+     * @param zones Lista de zonas seguras a sincronizar en el reloj.
+     * @return [Result] exitoso si el reloj acepta las zonas, o con error en caso contrario.
+     */
     suspend fun syncZones(
         nodeId: String,
         profileId: String,
@@ -118,7 +156,13 @@ class WearDataLayerRepository(context: Context) {
         }
     }
 
-    // Solicita al reloj eliminar el perfil vinculado.
+    /**
+     * Solicita al reloj eliminar el perfil vinculado.
+     *
+     * @param nodeId Identificador del nodo Wear OS destino.
+     * @param profileId Identificador del perfil a desvincular.
+     * @return [Result] exitoso si el reloj acepta la desvinculación.
+     */
     suspend fun unlinkProfile(nodeId: String, profileId: String): Result<Unit> =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -133,7 +177,13 @@ class WearDataLayerRepository(context: Context) {
             }
         }
 
-    // Envía una alerta personalizada al reloj conectado.
+    /**
+     * Envía una alerta personalizada al reloj conectado.
+     *
+     * @param nodeId Identificador del nodo Wear OS destino.
+     * @param alert Entidad de alerta con tipo, descripción y datos del perfil asociado.
+     * @return [Result] exitoso si el reloj acepta la alerta.
+     */
     suspend fun sendCustomAlert(
         nodeId: String,
         alert: AlertaEntity
@@ -153,7 +203,14 @@ class WearDataLayerRepository(context: Context) {
         }
     }
 
-    // Ejecuta una petición con respuesta hacia un nodo Wear OS.
+    /**
+     * Ejecuta una petición con respuesta hacia un nodo Wear OS.
+     *
+     * @param nodeId Identificador del nodo destino.
+     * @param path Ruta del mensaje en el protocolo de la Data Layer.
+     * @param payload Objeto JSON con los datos de la solicitud.
+     * @return [JSONObject] con la respuesta del nodo.
+     */
     private fun sendRequest(nodeId: String, path: String, payload: JSONObject): JSONObject {
         val response = Tasks.await(
             messageClient.sendRequest(

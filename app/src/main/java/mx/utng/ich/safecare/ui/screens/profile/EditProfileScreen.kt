@@ -1,4 +1,4 @@
-package mx.utng.ich.safecare.ui.screens.profile
+﻿package mx.utng.ich.safecare.ui.screens.profile
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -20,7 +20,7 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-// Muestra el formulario para modificar un perfil monitoreado.
+/** Muestra el formulario para modificar un perfil monitoreado. */
 fun EditProfileScreen(
     profile: PerfilMonitoreadoEntity,
     viewModel: ProfileViewModel,

@@ -1,4 +1,4 @@
-package mx.utng.ich.safecaretv.data.youtube
+﻿package mx.utng.ich.safecaretv.data.youtube
 
 data class YouTubeVideo(
     val id: String,
