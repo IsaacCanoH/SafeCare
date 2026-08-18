@@ -1,4 +1,4 @@
-﻿# SafeCare Wear OS
+﻿﻿# SafeCare Wear OS
 
 ## Nombre del estudiante
 
@@ -401,15 +401,15 @@ A continuación se presentan las evidencias de la carta de validación del proye
 
 ![Carta de Validación 2](evidencias/Carta_de_Validacion_02.jpeg)
 
-## DocumentaciÃ³n del cÃ³digo
+## Documentación del código
 
-Esta secciÃ³n presenta el cÃ³digo fuente completo del proyecto con los comentarios de documentaciÃ³n KDoc incluidos, organizados por mÃ³dulo. Cada bloque de cÃ³digo corresponde a un archivo .kt del proyecto y contiene los KDocs que describen la responsabilidad de cada clase, funciÃ³n y propiedad.
+Esta sección presenta el código fuente completo del proyecto con los comentarios de documentación KDoc incluidos, organizados por módulo. Cada bloque de código corresponde a un archivo .kt del proyecto y contiene los KDocs que describen la responsabilidad de cada clase, función y propiedad.
 
-**Orden de revisiÃ³n recomendado:** punto de entrada -> pantalla/controlador -> servicios -> repositorio/datos.
+**Orden de revisión recomendado:** punto de entrada -> pantalla/controlador -> servicios -> repositorio/datos.
 
 ---
 
-### MÃ³dulo mÃ³vil - app (aplicaciÃ³n del cuidador)
+### Módulo móvil - app (aplicación del cuidador)
 
 #### 1. `MobileDataLayerService.kt`
 
@@ -781,7 +781,7 @@ data class PerfilMonitoreadoEntity(
 )
 
 /**
- * Registro base que almacena los parÃ¡metros exactos de una zona de contenciÃ³n espacial (geocerca).
+ * Registro base que almacena los parámetros exactos de una zona de contención espacial (geocerca).
  *  * Define atributos vitales como las coordenadas del centro, el radio de tolerancia (en metros) y la identidad de la zona.
  */
 data class ZonaSeguraEntity(
@@ -798,8 +798,8 @@ data class ZonaSeguraEntity(
 )
 
 /**
- * Entidad de modelo relacional que representa fÃ­sicamente un reloj Wear OS asociado a un perfil.
- *  * Guarda parÃ¡metros tÃ©cnicos como la direcciÃ³n MAC, nombre del dispositivo y tokens de vinculaciÃ³n en la base de datos local.
+ * Entidad de modelo relacional que representa físicamente un reloj Wear OS asociado a un perfil.
+ *  * Guarda parámetros técnicos como la dirección MAC, nombre del dispositivo y tokens de vinculación en la base de datos local.
  */
 data class SmartwatchEntity(
     val idSmartwatch: String = UUID.randomUUID().toString(),
@@ -816,8 +816,8 @@ data class SmartwatchEntity(
 
 /**
  * Entidad de base de datos que representa una alerta o incidente generado en el sistema.
- *  * Almacena informaciÃ³n crÃ­tica como el tipo de alerta, el nivel de gravedad, la fecha y hora exacta, y el perfil afectado.
- *  * Se utiliza en conjunciÃ³n con Room para garantizar la persistencia local de los datos.
+ *  * Almacena información crítica como el tipo de alerta, el nivel de gravedad, la fecha y hora exacta, y el perfil afectado.
+ *  * Se utiliza en conjunción con Room para garantizar la persistencia local de los datos.
  */
 data class AlertaEntity(
     val idAlerta: String = UUID.randomUUID().toString(),
@@ -844,8 +844,8 @@ data class AlertaConPerfil(
 )
 
 /**
- * Estructura de entidad que encapsula un punto geogrÃ¡fico (latitud, longitud) y un timestamp.
- *  * Forma el nÃºcleo de la traza de movimiento del usuario monitoreado para su posterior anÃ¡lisis.
+ * Estructura de entidad que encapsula un punto geográfico (latitud, longitud) y un timestamp.
+ *  * Forma el núcleo de la traza de movimiento del usuario monitoreado para su posterior análisis.
  */
 data class UbicacionEntity(
     val idUbicacion: String = UUID.randomUUID().toString(),
@@ -919,8 +919,8 @@ import io.ktor.client.engine.okhttp.OkHttp
 import mx.utng.ich.safecare.BuildConfig
 
 /**
- * Instancia cliente nÃºcleo para la comunicaciÃ³n con la plataforma backend-as-a-service (Supabase).
- *  * Configura interceptores, tiempos de espera y mecanismos de reconexiÃ³n automÃ¡tica para las peticiones HTTP.
+ * Instancia cliente núcleo para la comunicación con la plataforma backend-as-a-service (Supabase).
+ *  * Configura interceptores, tiempos de espera y mecanismos de reconexión automática para las peticiones HTTP.
  */
 object SupabaseClient {
     /** URL del proyecto de Supabase obtenida desde BuildConfig. */
@@ -973,7 +973,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * Repositorio de alto nivel que abstrae y consolida las llamadas a la API REST y Realtime de Supabase.
- *  * Proporciona un punto Ãºnico de verdad para que el resto de la aplicaciÃ³n solicite datos a la nube sin acoplarse a la librerÃ­a de red.
+ *  * Proporciona un punto único de verdad para que el resto de la aplicación solicite datos a la nube sin acoplarse a la librería de red.
  */
 class SupabaseRepository {
 
@@ -1510,6 +1510,11 @@ class SupabaseRepository {
     }
 
     /** Fila auxiliar para decodificar el identificador de perfil desde Supabase. */
+    /**
+     * Fila minima de perfil usada para obtener los identificadores del cuidador autenticado.
+     *
+     * @property id Identificador unico del perfil monitoreado.
+     */
     @Serializable
     private data class ProfileIdRow(@SerialName("idPerfil") val id: String)
 
@@ -1623,7 +1628,7 @@ import androidx.compose.runtime.*
 import mx.utng.ich.safecare.ui.screens.SafeCareApp
 
 /**
- * Punto de entrada principal (Activity) que orquesta la interfaz grÃ¡fica y la navegaciÃ³n en este mÃ³dulo.
+ * Punto de entrada principal (Activity) que orquesta la interfaz gráfica y la navegación en este módulo.
  *  * Aloja los contenedores de Compose y gestiona el ciclo de vida primario de la experiencia de usuario.
  */
 class MainActivity : ComponentActivity() {
@@ -2009,7 +2014,7 @@ import androidx.compose.ui.unit.sp
 
 /**
  * Modelo de datos detallado que representa a un usuario monitoreado (como un adulto mayor o un paciente) en la plataforma.
- *  * Consolida la informaciÃ³n demogrÃ¡fica bÃ¡sica y los identificadores Ãºnicos necesarios para asociar los datos mÃ©dicos y de ubicaciÃ³n.
+ *  * Consolida la información demográfica básica y los identificadores únicos necesarios para asociar los datos médicos y de ubicación.
  */
 data class MonitoredPerson(
     val id: String,
@@ -2482,7 +2487,7 @@ fun LiveMapScreen(
             currentMap.overlays.clear()
 
             // OsmDroid dibuja encima los overlays agregados al final. Primero se dibujan
-            // los perÃ­metros y al final los marcadores para que sigan siendo visibles y tocables.
+            // los perímetros y al final los marcadores para que sigan siendo visibles y tocables.
             zones
                 .filter { zone ->
                     zone.activa && displayedProfiles.any { it.idPerfil in zone.idPerfiles }
@@ -4447,6 +4452,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import mx.utng.ich.safecare.data.local.entity.PerfilMonitoreadoEntity
 
+/**
+ * Campo desplegable de seleccion multiple para asociar perfiles monitoreados a una zona segura.
+ *
+ * Muestra los perfiles disponibles con casillas de verificacion y comunica al llamador el
+ * conjunto actualizado de identificadores cada vez que se selecciona o deselecciona un perfil.
+ *
+ * @param profiles Perfiles que pueden asociarse a la zona segura.
+ * @param selectedProfileIds Identificadores de los perfiles seleccionados actualmente.
+ * @param onSelectionChange Callback que recibe el nuevo conjunto de identificadores seleccionados.
+ * @param modifier Modificador de Compose para personalizar el diseno del componente.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ProfileMultiSelectDropdown(
@@ -5649,7 +5665,7 @@ object SecurityUtils {
 
 ---
 
-### MÃ³dulo Wear OS - wearable (dispositivo monitoreado)
+### Módulo Wear OS - wearable (dispositivo monitoreado)
 
 #### 1. `WearDataLayerService.kt`
 
@@ -5679,9 +5695,9 @@ import mx.utng.ich.safecare.wearable.presentation.geofence.SafeZoneMonitor
 import org.json.JSONObject
 
 /**
- * Servicio principal encargado de escuchar y gestionar la comunicaciÃ³n bidireccional en la capa de datos (Data Layer) de Wear OS.
- *  * Establece el puente de conexiÃ³n entre el dispositivo mÃ³vil (telÃ©fono) y el reloj inteligente (smartwatch).
- *  * Facilita la sincronizaciÃ³n de estados vitales, recepciÃ³n de alertas de pÃ¡nico y actualizaciÃ³n de configuraciones en tiempo real y de forma transparente.
+ * Servicio principal encargado de escuchar y gestionar la comunicación bidireccional en la capa de datos (Data Layer) de Wear OS.
+ *  * Establece el puente de conexión entre el dispositivo móvil (teléfono) y el reloj inteligente (smartwatch).
+ *  * Facilita la sincronización de estados vitales, recepción de alertas de pánico y actualización de configuraciones en tiempo real y de forma transparente.
  */
 class WearDataLayerService : WearableListenerService() {
     private val executor = Executors.newSingleThreadExecutor()
@@ -5942,7 +5958,7 @@ import mx.utng.ich.safecare.wearable.data.local.entity.UbicacionEntity
 
 /**
  * Clase altamente especializada, responsable de recolectar, empacar y emitir actualizaciones de datos desde el reloj hacia la red.
- *  * Funciona como el emisor de los signos vitales obtenidos por los sensores biomÃ©tricos, garantizando la entrega a travÃ©s del DataClient.
+ *  * Funciona como el emisor de los signos vitales obtenidos por los sensores biométricos, garantizando la entrega a través del DataClient.
  */
 class WearDataPublisher(context: Context) {
     private val dataClient = Wearable.getDataClient(context.applicationContext)
@@ -6029,8 +6045,8 @@ import android.content.Context
 import java.util.UUID
 
 /**
- * Componente de almacenamiento criptogrÃ¡ficamente seguro dentro del dispositivo Wear OS.
- *  * Gestiona, protege y audita los tokens de autenticaciÃ³n y los secretos criptogrÃ¡ficos necesarios para la vinculaciÃ³n confiable con el telÃ©fono maestro.
+ * Componente de almacenamiento criptográficamente seguro dentro del dispositivo Wear OS.
+ *  * Gestiona, protege y audita los tokens de autenticación y los secretos criptográficos necesarios para la vinculación confiable con el teléfono maestro.
  */
 class WearIdentityStore(context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences(
@@ -6068,8 +6084,8 @@ import mx.utng.ich.safecare.wearable.data.local.entity.AlertaEntity
 @Dao
 /**
  * Objeto de Acceso a Datos (DAO) para las operaciones de base de datos relacionadas con las alertas del sistema.
- *  * Permite la persistencia, consulta, actualizaciÃ³n y eliminaciÃ³n de los registros de incidentes.
- *  * Facilita el acceso estructurado a los historiales para auditorÃ­as o anÃ¡lisis de patrones de riesgo.
+ *  * Permite la persistencia, consulta, actualización y eliminación de los registros de incidentes.
+ *  * Facilita el acceso estructurado a los historiales para auditorías o análisis de patrones de riesgo.
  */
 interface AlertaDao {
 
@@ -6106,8 +6122,8 @@ import mx.utng.ich.safecare.wearable.data.local.entity.PerfilMonitoreadoEntity
 
 @Dao
 /**
- * DAO especializado para leer, insertar y actualizar los perfiles mÃ©dicos y de pacientes en el repositorio local.
- *  * Define las consultas SQL Ã³ptimas para la gestiÃ³n de las identidades de las personas bajo el cuidado del sistema.
+ * DAO especializado para leer, insertar y actualizar los perfiles médicos y de pacientes en el repositorio local.
+ *  * Define las consultas SQL óptimas para la gestión de las identidades de las personas bajo el cuidado del sistema.
  */
 interface PerfilMonitoreadoDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -6150,8 +6166,8 @@ import mx.utng.ich.safecare.wearable.data.local.entity.SmartwatchEntity
 
 @Dao
 /**
- * Objeto DAO diseÃ±ado exclusivamente para la administraciÃ³n local del catÃ¡logo de relojes inteligentes vinculados.
- *  * Provee mÃ©todos para emparejar, desvincular y actualizar el estado de los dispositivos Wear OS registrados en la base local.
+ * Objeto DAO diseñado exclusivamente para la administración local del catálogo de relojes inteligentes vinculados.
+ *  * Provee métodos para emparejar, desvincular y actualizar el estado de los dispositivos Wear OS registrados en la base local.
  */
 interface SmartwatchDao {
 
@@ -6203,8 +6219,8 @@ import mx.utng.ich.safecare.wearable.data.local.entity.UbicacionEntity
 
 @Dao
 /**
- * Clase DAO responsable de la lectura, escritura y depuraciÃ³n del historial de trayectorias GPS.
- *  * Permite almacenar localmente las rutas seguidas por el dispositivo cuando la conexiÃ³n a la nube no estÃ¡ disponible.
+ * Clase DAO responsable de la lectura, escritura y depuración del historial de trayectorias GPS.
+ *  * Permite almacenar localmente las rutas seguidas por el dispositivo cuando la conexión a la nube no está disponible.
  */
 interface UbicacionDao {
 
@@ -6249,8 +6265,8 @@ import mx.utng.ich.safecare.wearable.data.local.entity.ZonaSeguraEntity
 
 @Dao
 /**
- * Objeto DAO diseÃ±ado para la manipulaciÃ³n y consulta de zonas geofencing a nivel de base de datos.
- *  * Mapea las consultas requeridas para activar o desactivar perÃ­metros de vigilancia geogrÃ¡fica de forma programÃ¡tica.
+ * Objeto DAO diseñado para la manipulación y consulta de zonas geofencing a nivel de base de datos.
+ *  * Mapea las consultas requeridas para activar o desactivar perímetros de vigilancia geográfica de forma programática.
  */
 interface ZonaSeguraDao {
 
@@ -6288,8 +6304,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
- * Proveedor centralizado que inicializa, configura y expone la instancia Ãºnica (Singleton) de la base de datos Room.
- *  * Asegura que todas las operaciones locales compartan el mismo contexto de conexiÃ³n, mejorando el rendimiento y evitando bloqueos.
+ * Proveedor centralizado que inicializa, configura y expone la instancia única (Singleton) de la base de datos Room.
+ *  * Asegura que todas las operaciones locales compartan el mismo contexto de conexión, mejorando el rendimiento y evitando bloqueos.
  */
 object DatabaseProvider {
 
@@ -6700,6 +6716,12 @@ import mx.utng.ich.safecare.wearable.data.local.entity.SmartwatchEntity
 import mx.utng.ich.safecare.wearable.data.local.entity.ZonaSeguraEntity
 import mx.utng.ich.safecare.wearable.data.local.entity.PerfilMonitoreadoEntity
 
+/**
+ * Base de datos Room local del smartwatch.
+ *
+ * Centraliza las entidades que se conservan sin conexion y expone los DAO que permiten a los
+ * servicios de monitoreo, ubicacion y alertas consultarlas o actualizarlas.
+ */
 @Database(
     entities = [
         AlertaEntity::class,
@@ -6739,8 +6761,8 @@ import java.util.UUID
 @Entity(tableName = "Alertas")
 /**
  * Entidad de base de datos que representa una alerta o incidente generado en el sistema.
- *  * Almacena informaciÃ³n crÃ­tica como el tipo de alerta, el nivel de gravedad, la fecha y hora exacta, y el perfil afectado.
- *  * Se utiliza en conjunciÃ³n con Room para garantizar la persistencia local de los datos.
+ *  * Almacena información crítica como el tipo de alerta, el nivel de gravedad, la fecha y hora exacta, y el perfil afectado.
+ *  * Se utiliza en conjunción con Room para garantizar la persistencia local de los datos.
  */
 data class AlertaEntity(
     @PrimaryKey
@@ -6793,8 +6815,8 @@ import java.util.UUID
 
 @Entity(tableName = "SmartWatch")
 /**
- * Entidad de modelo relacional que representa fÃ­sicamente un reloj Wear OS asociado a un perfil.
- *  * Guarda parÃ¡metros tÃ©cnicos como la direcciÃ³n MAC, nombre del dispositivo y tokens de vinculaciÃ³n en la base de datos local.
+ * Entidad de modelo relacional que representa físicamente un reloj Wear OS asociado a un perfil.
+ *  * Guarda parámetros técnicos como la dirección MAC, nombre del dispositivo y tokens de vinculación en la base de datos local.
  */
 data class SmartwatchEntity(
     @PrimaryKey
@@ -6820,8 +6842,8 @@ import java.util.UUID
 
 @Entity(tableName = "Ubicacion")
 /**
- * Estructura de entidad que encapsula un punto geogrÃ¡fico (latitud, longitud) y un timestamp.
- *  * Forma el nÃºcleo de la traza de movimiento del usuario monitoreado para su posterior anÃ¡lisis.
+ * Estructura de entidad que encapsula un punto geográfico (latitud, longitud) y un timestamp.
+ *  * Forma el núcleo de la traza de movimiento del usuario monitoreado para su posterior análisis.
  */
 data class UbicacionEntity(
     @PrimaryKey
@@ -6844,7 +6866,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "ZonaSegura")
 /**
- * Registro base que almacena los parÃ¡metros exactos de una zona de contenciÃ³n espacial (geocerca).
+ * Registro base que almacena los parámetros exactos de una zona de contención espacial (geocerca).
  *  * Define atributos vitales como las coordenadas del centro, el radio de tolerancia (en metros) y la identidad de la zona.
  */
 data class ZonaSeguraEntity(
@@ -6871,8 +6893,8 @@ import mx.utng.ich.safecare.wearable.data.local.database.SafeCareDatabase
 import mx.utng.ich.safecare.wearable.data.repository.SupabaseRepository
 
 /**
- * Servicio analÃ­tico diseÃ±ado para cruzar, verificar y resolver los datos del perfil activo contra las configuraciones globales.
- *  * Asegura que se estÃ©n aplicando las reglas de negocio correctas dependiendo del tipo de paciente seleccionado.
+ * Servicio analítico diseñado para cruzar, verificar y resolver los datos del perfil activo contra las configuraciones globales.
+ *  * Asegura que se estén aplicando las reglas de negocio correctas dependiendo del tipo de paciente seleccionado.
  */
 object SafeCareProfileResolver {
     /**
@@ -6924,7 +6946,7 @@ object SafeCareProfileResolver {
 package mx.utng.ich.safecare.wearable.data.model
 
 /**
- * EnumeraciÃ³n TipoPerfil del sistema SafeCare.
+ * Enumeración TipoPerfil del sistema SafeCare.
  */
 enum class TipoPerfil {
     MENOR,
@@ -6933,7 +6955,7 @@ enum class TipoPerfil {
 }
 
 /**
- * EnumeraciÃ³n EstadoAlerta del sistema SafeCare.
+ * Enumeración EstadoAlerta del sistema SafeCare.
  */
 enum class EstadoAlerta {
     ACTIVA,
@@ -6942,7 +6964,7 @@ enum class EstadoAlerta {
 }
 
 /**
- * EnumeraciÃ³n TipoAlerta del sistema SafeCare.
+ * Enumeración TipoAlerta del sistema SafeCare.
  */
 enum class TipoAlerta {
     SOS,
@@ -6952,7 +6974,7 @@ enum class TipoAlerta {
 }
 
 /**
- * EnumeraciÃ³n TipoConexion del sistema SafeCare.
+ * Enumeración TipoConexion del sistema SafeCare.
  */
 enum class TipoConexion {
     ONLINE,
@@ -6972,8 +6994,8 @@ import io.github.jan.supabase.realtime.Realtime
 import mx.utng.ich.safecare.wearable.BuildConfig
 
 /**
- * Instancia cliente nÃºcleo para la comunicaciÃ³n con la plataforma backend-as-a-service (Supabase).
- *  * Configura interceptores, tiempos de espera y mecanismos de reconexiÃ³n automÃ¡tica para las peticiones HTTP.
+ * Instancia cliente núcleo para la comunicación con la plataforma backend-as-a-service (Supabase).
+ *  * Configura interceptores, tiempos de espera y mecanismos de reconexión automática para las peticiones HTTP.
  */
 object SupabaseClient {
     private val SUPABASE_URL = BuildConfig.SUPABASE_URL
@@ -7012,7 +7034,7 @@ import mx.utng.ich.safecare.wearable.data.local.entity.ZonaSeguraEntity
 
 /**
  * Repositorio de alto nivel que abstrae y consolida las llamadas a la API REST y Realtime de Supabase.
- *  * Proporciona un punto Ãºnico de verdad para que el resto de la aplicaciÃ³n solicite datos a la nube sin acoplarse a la librerÃ­a de red.
+ *  * Proporciona un punto único de verdad para que el resto de la aplicación solicite datos a la nube sin acoplarse a la librería de red.
  */
 class SupabaseRepository {
 
@@ -7148,9 +7170,26 @@ class SupabaseRepository {
             }
         }
 
+    /**
+     * Fila que vincula un smartwatch con el identificador de su perfil monitoreado.
+     *
+     * @property idPerfil Identificador del perfil asociado, o `null` si aun no existe vinculacion.
+     */
     @Serializable
     private data class WatchLinkRow(@SerialName("idPerfil") val idPerfil: String? = null)
 
+    /**
+     * Datos remotos necesarios para reconstruir un perfil monitoreado localmente.
+     *
+     * @property id Identificador unico del perfil.
+     * @property nombre Nombre del perfil.
+     * @property edad Edad registrada.
+     * @property fechaNacimiento Fecha de nacimiento, si fue proporcionada.
+     * @property tipoPerfil Categoria del perfil monitoreado.
+     * @property foto Referencia a la fotografia, si existe.
+     * @property estadoActual Indica si el perfil permanece activo.
+     * @property idCuidador Identificador del cuidador propietario del perfil.
+     */
     @Serializable
     private data class ProfileRow(
         @SerialName("idPerfil") val id: String,
@@ -7163,6 +7202,17 @@ class SupabaseRepository {
         @SerialName("idCuidador") val idCuidador: String
     )
 
+    /**
+     * Datos remotos de una zona segura vinculada a un perfil.
+     *
+     * @property id Identificador unico de la zona.
+     * @property nombre Nombre visible de la zona.
+     * @property latitudCentro Latitud de su punto central.
+     * @property longitudCentro Longitud de su punto central.
+     * @property radioMetros Radio de cobertura en metros.
+     * @property activa Indica si la zona debe monitorearse.
+     * @property idPerfil Identificador del perfil asociado.
+     */
     @Serializable
     private data class SafeZoneRow(
         @SerialName("idZona") val id: String,
@@ -7174,6 +7224,11 @@ class SupabaseRepository {
         @SerialName("idPerfil") val idPerfil: String
     )
 
+    /**
+     * Fila de relacion que identifica una zona segura vinculada al perfil consultado.
+     *
+     * @property zoneId Identificador de la zona segura.
+     */
     @Serializable
     private data class SafeZoneProfileRow(
         @SerialName("idZona") val zoneId: String
@@ -7181,8 +7236,8 @@ class SupabaseRepository {
 }
 
 /**
- * Clase de configuraciÃ³n persistente que mantiene la integridad de la sesiÃ³n vinculada.
- *  * Asegura que las credenciales y los tokens de acceso de Supabase permanezcan activos y vÃ¡lidos entre los reinicios de la aplicaciÃ³n.
+ * Clase de configuración persistente que mantiene la integridad de la sesión vinculada.
+ *  * Asegura que las credenciales y los tokens de acceso de Supabase permanezcan activos y válidos entre los reinicios de la aplicación.
  */
 data class LinkedConfiguration(
     val profile: PerfilMonitoreadoEntity,
@@ -7206,8 +7261,8 @@ import mx.utng.ich.safecare.wearable.presentation.location.WearLocationReader
 import mx.utng.ich.safecare.wearable.presentation.sensors.DeviceStatusReader
 
 /**
- * Tarea programada (Worker) de WorkManager responsable de la sincronizaciÃ³n periÃ³dica en segundo plano.
- *  * Asegura que los datos crÃ­ticos suban a la nube y se procesen de manera confiable, respetando el estado de baterÃ­a y red.
+ * Tarea programada (Worker) de WorkManager responsable de la sincronización periódica en segundo plano.
+ *  * Asegura que los datos críticos suban a la nube y se procesen de manera confiable, respetando el estado de batería y red.
  */
 class StatusWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     /** Publica el estado del reloj y agenda su siguiente actualización. */
@@ -7255,9 +7310,9 @@ import mx.utng.ich.safecare.wearable.presentation.geofence.SafeCareAlertNotifier
 import mx.utng.ich.safecare.wearable.presentation.ui.WearAlertScreen
 
 /**
- * Actividad principal diseÃ±ada especÃ­ficamente para la visualizaciÃ³n y gestiÃ³n de alertas crÃ­ticas en la interfaz de usuario.
- *  * Esta actividad se lanza de forma prioritaria cuando se detecta una anomalÃ­a en los signos vitales, una salida de zona segura, o una alerta manual.
- *  * Proporciona opciones rÃ¡pidas de respuesta y muestra detalles crÃ­ticos del incidente.
+ * Actividad principal diseñada específicamente para la visualización y gestión de alertas críticas en la interfaz de usuario.
+ *  * Esta actividad se lanza de forma prioritaria cuando se detecta una anomalía en los signos vitales, una salida de zona segura, o una alerta manual.
+ *  * Proporciona opciones rápidas de respuesta y muestra detalles críticos del incidente.
  */
 class AlertActivity : ComponentActivity() {
     private var vibrator: Vibrator? = null
@@ -7439,8 +7494,8 @@ import mx.utng.ich.safecare.wearable.presentation.ui.WearHomeUiState
 import mx.utng.ich.safecare.wearable.data.repository.SupabaseRepository
 
 /**
- * Controlador orquestador que fusiona los datos de los diferentes sensores biomÃ©tricos y de entorno del smartwatch.
- *  * Procesa localmente la informaciÃ³n en el reloj antes de enviarla, determinando si hay anomalÃ­as que requieran una transmisiÃ³n inmediata.
+ * Controlador orquestador que fusiona los datos de los diferentes sensores biométricos y de entorno del smartwatch.
+ *  * Procesa localmente la información en el reloj antes de enviarla, determinando si hay anomalías que requieran una transmisión inmediata.
  */
 class WearStatusController(
     private val context: Context,
@@ -7651,8 +7706,8 @@ class WearStatusController(
 package mx.utng.ich.safecare.wearable.presentation.data
 
 /**
- * Modelo integral que refleja el estado operativo y las mÃ©tricas actuales del dispositivo fÃ­sico (como un smartwatch).
- *  * Incluye datos vitales operativos como el nivel de baterÃ­a, estado de la conexiÃ³n Bluetooth/Wi-Fi, y precisiÃ³n de los sensores.
+ * Modelo integral que refleja el estado operativo y las métricas actuales del dispositivo físico (como un smartwatch).
+ *  * Incluye datos vitales operativos como el nivel de batería, estado de la conexión Bluetooth/Wi-Fi, y precisión de los sensores.
  */
 data class DeviceStatus(
     val batteryText: String,
@@ -7692,8 +7747,8 @@ import mx.utng.ich.safecare.wearable.presentation.sensors.DeviceStatusReader
 import mx.utng.ich.safecare.wearable.data.repository.SupabaseRepository
 
 /**
- * Receptor de eventos (BroadcastReceiver) a nivel de sistema que se activa automÃ¡ticamente al presentarse transiciones geogrÃ¡ficas.
- *  * Responde instantÃ¡neamente cuando el usuario monitoreado entra o sale de los lÃ­mites fÃ­sicos de una zona segura establecida.
+ * Receptor de eventos (BroadcastReceiver) a nivel de sistema que se activa automáticamente al presentarse transiciones geográficas.
+ *  * Responde instantáneamente cuando el usuario monitoreado entra o sale de los límites físicos de una zona segura establecida.
  */
 class GeofenceBroadcastReceiver : BroadcastReceiver() {
 
@@ -7904,8 +7959,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Modelo matemÃ¡tico y de datos que representa una zona segura mediante coordenadas GPS centrales y un radio especÃ­fico.
- *  * Define el perÃ­metro geogrÃ¡fico donde el paciente puede moverse libremente sin activar una alarma de abandono.
+ * Modelo matemático y de datos que representa una zona segura mediante coordenadas GPS centrales y un radio específico.
+ *  * Define el perímetro geográfico donde el paciente puede moverse libremente sin activar una alarma de abandono.
  */
 data class SafeZoneGeofence(
     val id: String,
@@ -7916,7 +7971,7 @@ data class SafeZoneGeofence(
 
 /**
  * Controlador principal encargado de registrar, coordinar y dar de baja las geocercas en los servicios de Google Location API.
- *  * Convierte la lÃ³gica de negocio de las zonas seguras en peticiones de monitoreo espacial altamente optimizadas en consumo de baterÃ­a.
+ *  * Convierte la lógica de negocio de las zonas seguras en peticiones de monitoreo espacial altamente optimizadas en consumo de batería.
  */
 class GeofenceManager(context: Context) {
 
@@ -8016,7 +8071,7 @@ import mx.utng.ich.safecare.wearable.R
 import mx.utng.ich.safecare.wearable.presentation.AlertActivity
 
 /**
- * Servicio omnicanal encargado de la emisiÃ³n y propagaciÃ³n de las notificaciones de emergencia.
+ * Servicio omnicanal encargado de la emisión y propagación de las notificaciones de emergencia.
  *  * Coordina alertas visuales (pop-ups), alertas sonoras (alarmas), y notificaciones Push del sistema para garantizar que la alerta no sea ignorada.
  */
 object SafeCareAlertNotifier {
@@ -8313,8 +8368,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 
 /**
- * Gestor de seguridad responsable de la evaluaciÃ³n, solicitud y verificaciÃ³n de los permisos de geolocalizaciÃ³n en tiempo de ejecuciÃ³n.
- *  * Maneja la lÃ³gica de permisos en primero y segundo plano, garantizando el cumplimiento de las polÃ­ticas de privacidad.
+ * Gestor de seguridad responsable de la evaluación, solicitud y verificación de los permisos de geolocalización en tiempo de ejecución.
+ *  * Maneja la lógica de permisos en primero y segundo plano, garantizando el cumplimiento de las políticas de privacidad.
  */
 class LocationPermissionManager(
     private val context: Context
@@ -8691,7 +8746,7 @@ class LocationTrackingService : Service() {
                     )
                 }
         ).onSuccess { count ->
-            Log.i(TAG, "ConfiguraciÃ³n remota sincronizada: $count zonas")
+            Log.i(TAG, "Configuración remota sincronizada: $count zonas")
         }.onFailure { exception ->
             Log.w(TAG, "No se pudieron registrar las zonas remotas", exception)
         }
@@ -8800,8 +8855,8 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 /**
- * Servicio de hardware enfocado en la lectura eficiente de las coordenadas GPS directamente desde el mÃ³dem del reloj inteligente.
- *  * Minimiza el uso de la baterÃ­a mediante el uso de algoritmos de fusiÃ³n de sensores (Fused Location Provider) optimizados para wearables.
+ * Servicio de hardware enfocado en la lectura eficiente de las coordenadas GPS directamente desde el módem del reloj inteligente.
+ *  * Minimiza el uso de la batería mediante el uso de algoritmos de fusión de sensores (Fused Location Provider) optimizados para wearables.
  */
 class WearLocationReader(
     context: Context
@@ -8918,7 +8973,7 @@ import mx.utng.ich.safecare.wearable.presentation.ui.WearHomeScreen
 import mx.utng.ich.safecare.wearable.presentation.ui.WearHomeUiState
 
 /**
- * Punto de entrada principal (Activity) que orquesta la interfaz grÃ¡fica y la navegaciÃ³n en este mÃ³dulo.
+ * Punto de entrada principal (Activity) que orquesta la interfaz gráfica y la navegación en este módulo.
  *  * Aloja los contenedores de Compose y gestiona el ciclo de vida primario de la experiencia de usuario.
  */
 class MainActivity : ComponentActivity() {
@@ -9150,8 +9205,8 @@ import android.os.BatteryManager
 import mx.utng.ich.safecare.wearable.presentation.data.DeviceStatus
 
 /**
- * Servicio lector especializado en monitorear y recolectar continuamente el estado fÃ­sico y de conectividad del dispositivo.
- *  * Proporciona el flujo de datos necesario para evaluar si el equipo se encuentra en condiciones Ã³ptimas para el monitoreo del paciente.
+ * Servicio lector especializado en monitorear y recolectar continuamente el estado físico y de conectividad del dispositivo.
+ *  * Proporciona el flujo de datos necesario para evaluar si el equipo se encuentra en condiciones óptimas para el monitoreo del paciente.
  */
 class DeviceStatusReader(
     private val context: Context
@@ -9882,7 +9937,7 @@ package mx.utng.ich.safecare.wearable.presentation.ui
 
 /**
  * Objeto contenedor del estado completo de la interfaz para la pantalla de inicio del reloj (Watch Face / App Home).
- *  * Maneja estados complejos en un solo objeto para facilitar la renderizaciÃ³n reactiva en Jetpack Compose for Wear OS.
+ *  * Maneja estados complejos en un solo objeto para facilitar la renderización reactiva en Jetpack Compose for Wear OS.
  */
 data class WearHomeUiState(
     val greetingName: String = "SafeCare",
@@ -9897,7 +9952,7 @@ data class WearHomeUiState(
 
 ---
 
-### MÃ³dulo Android TV - tv (panel del cuidador)
+### Módulo Android TV - tv (panel del cuidador)
 
 #### 1. `TvAlert.kt`
 
@@ -9905,7 +9960,7 @@ data class WearHomeUiState(
 package mx.utng.ich.safecaretv.data.alert
 
 /**
- * Variante del modelo de alerta adaptada especÃ­ficamente a las caracterÃ­sticas visuales y requerimientos de Android TV.
+ * Variante del modelo de alerta adaptada específicamente a las características visuales y requerimientos de Android TV.
  *  * Contiene metadatos adicionales para optimizar su despliegue en pantallas de gran formato (Leanback).
  */
 data class TvAlert(
@@ -9945,7 +10000,7 @@ import mx.utng.ich.safecaretv.data.remote.TvSupabaseClient
 
 /**
  * Repositorio dedicado al entorno de TV, encargado de recibir y encolar las alertas de emergencia entrantes.
- *  * Optimizado para reaccionar a eventos Realtime y notificar a la interfaz del televisor instantÃ¡neamente.
+ *  * Optimizado para reaccionar a eventos Realtime y notificar a la interfaz del televisor instantáneamente.
  */
 class TvAlertsRepository {
     private val client = TvSupabaseClient.client
@@ -10018,7 +10073,7 @@ class TvAlertsRepository {
 package mx.utng.ich.safecaretv.data.profile
 
 /**
- * EnumeraciÃ³n MonitoringStatus del sistema SafeCare.
+ * Enumeración MonitoringStatus del sistema SafeCare.
  */
 enum class MonitoringStatus {
     SAFE,
@@ -10028,7 +10083,7 @@ enum class MonitoringStatus {
 }
 
 /**
- * Perfil exhaustivo que encapsula a una persona monitoreada junto con todas sus configuraciones y mÃ©tricas asociadas.
+ * Perfil exhaustivo que encapsula a una persona monitoreada junto con todas sus configuraciones y métricas asociadas.
  *  * Proporciona una vista unificada del estado actual del paciente para ser consumida por los cuadros de mando (dashboards).
  */
 data class MonitoredProfile(
@@ -10053,8 +10108,8 @@ data class MonitoredProfile(
 )
 
 /**
- * Envoltorio de informaciÃ³n consolidada que agrupa todas las zonas seguras activas y asignadas a un perfil especÃ­fico.
- *  * Facilita el transporte de datos espaciales entre las capas de dominio y presentaciÃ³n.
+ * Envoltorio de información consolidada que agrupa todas las zonas seguras activas y asignadas a un perfil específico.
+ *  * Facilita el transporte de datos espaciales entre las capas de dominio y presentación.
  */
 data class SafeZoneInfo(
     val name: String,
@@ -10083,8 +10138,8 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * Capa de repositorio abstracta para la gestiÃ³n bidireccional de los perfiles monitoreados.
- *  * Sincroniza los datos entre la base de datos remota (Supabase) y el almacenamiento local (Room), implementando polÃ­ticas de cachÃ© offline.
+ * Capa de repositorio abstracta para la gestión bidireccional de los perfiles monitoreados.
+ *  * Sincroniza los datos entre la base de datos remota (Supabase) y el almacenamiento local (Room), implementando políticas de caché offline.
  */
 class MonitoredProfilesRepository {
     private val client = TvSupabaseClient.client
@@ -10230,6 +10285,16 @@ class MonitoredProfilesRepository {
 
 }
 
+/**
+ * Representacion de la fila de perfil obtenida desde Supabase.
+ *
+ * @property id Identificador unico del perfil.
+ * @property name Nombre mostrado para el perfil.
+ * @property age Edad registrada del perfil.
+ * @property profileType Tipo de perfil monitoreado.
+ * @property birthDate Fecha de nacimiento, si fue registrada.
+ * @property photoUrl URL de la fotografia del perfil, si existe.
+ */
 @Serializable
 private data class ProfileRow(
     @SerialName("idPerfil") val id: String,
@@ -10240,6 +10305,18 @@ private data class ProfileRow(
     @SerialName("foto") val photoUrl: String? = null
 )
 
+/**
+ * Representacion de un smartwatch vinculado a un perfil.
+ *
+ * @property id Identificador unico del smartwatch.
+ * @property battery Nivel de bateria reportado por el dispositivo.
+ * @property connection Estado de conexion actual.
+ * @property lastConnection Marca de tiempo de la ultima conexion.
+ * @property serialNumber Numero de serie del reloj, si esta disponible.
+ * @property deviceName Nombre configurado para el dispositivo.
+ * @property model Modelo comercial del smartwatch.
+ * @property profileId Identificador del perfil asociado, si existe.
+ */
 @Serializable
 private data class WatchRow(
     @SerialName("idSmartwatch") val id: String,
@@ -10252,6 +10329,15 @@ private data class WatchRow(
     @SerialName("idPerfil") val profileId: String? = null
 )
 
+/**
+ * Representacion remota de los datos configurables de una zona segura.
+ *
+ * @property zoneId Identificador unico de la zona.
+ * @property name Nombre visible de la zona.
+ * @property latitude Latitud de su centro geografico.
+ * @property longitude Longitud de su centro geografico.
+ * @property radiusMeters Radio de cobertura expresado en metros.
+ */
 @Serializable
 private data class SafeZoneDataRow(
     @SerialName("idZona") val zoneId: String,
@@ -10261,12 +10347,27 @@ private data class SafeZoneDataRow(
     @SerialName("radioMetros") val radiusMeters: Double
 )
 
+/**
+ * Relacion entre una zona segura y el perfil que debe monitorearse en ella.
+ *
+ * @property zoneId Identificador de la zona segura.
+ * @property profileId Identificador del perfil vinculado.
+ */
 @Serializable
 private data class SafeZoneProfileRow(
     @SerialName("idZona") val zoneId: String,
     @SerialName("idPerfil") val profileId: String
 )
 
+/**
+ * Zona segura ya asociada a un perfil, lista para construir su modelo de pantalla.
+ *
+ * @property name Nombre de la zona.
+ * @property latitude Latitud de su centro.
+ * @property longitude Longitud de su centro.
+ * @property radiusMeters Radio de cobertura en metros.
+ * @property profileId Identificador del perfil asociado.
+ */
 private data class SafeZoneRow(
     val name: String,
     val latitude: Double,
@@ -10275,6 +10376,14 @@ private data class SafeZoneRow(
     val profileId: String
 )
 
+/**
+ * Ultima ubicacion conocida de un smartwatch obtenida desde Supabase.
+ *
+ * @property latitude Latitud reportada.
+ * @property longitude Longitud reportada.
+ * @property timestamp Momento de registro de la ubicacion.
+ * @property watchId Identificador del smartwatch que reporto la posicion.
+ */
 @Serializable
 private data class LocationRow(
     @SerialName("latitud") val latitude: Double,
@@ -10296,7 +10405,7 @@ import io.github.jan.supabase.realtime.Realtime
 import mx.utng.ich.safecaretv.BuildConfig
 
 /**
- * VersiÃ³n especializada del cliente Supabase para el ecosistema de Android TV.
+ * Versión especializada del cliente Supabase para el ecosistema de Android TV.
  *  * Incluye configuraciones de red y manejo de sesiones ajustados al ciclo de vida prolongado de los dispositivos de sala de estar.
  */
 object TvSupabaseClient {
@@ -10322,7 +10431,7 @@ import mx.utng.ich.safecaretv.R
 /**
  * Modelo estructural que define los tonos de alerta y sonidos disponibles para las notificaciones.
  *  * Permite categorizar y gestionar diferentes niveles de urgencia auditiva dependiendo de la gravedad del evento.
- *  * Facilita la personalizaciÃ³n de las alarmas sonoras para el usuario final.
+ *  * Facilita la personalización de las alarmas sonoras para el usuario final.
  */
 data class AlertTone(
     val id: Int,
@@ -10332,8 +10441,8 @@ data class AlertTone(
 )
 
 /**
- * ColecciÃ³n estÃ¡tica y enlazada de los tonos de alerta predefinidos y soportados nativamente por la aplicaciÃ³n.
- *  * ActÃºa como un catÃ¡logo centralizado para facilitar la selecciÃ³n en las interfaces de configuraciÃ³n.
+ * Colección estática y enlazada de los tonos de alerta predefinidos y soportados nativamente por la aplicación.
+ *  * Actúa como un catálogo centralizado para facilitar la selección en las interfaces de configuración.
  */
 object AlertTones {
     val all = listOf(
@@ -10352,7 +10461,7 @@ object AlertTones {
 }
 
 /**
- * Gestor local de preferencias (SharedPreferences o DataStore) diseÃ±ado para persistir la configuraciÃ³n de tonos.
+ * Gestor local de preferencias (SharedPreferences o DataStore) diseñado para persistir la configuración de tonos.
  *  * Mantiene guardado el tono de alerta seleccionado por el usuario para cada tipo de incidente, garantizando una experiencia personalizada.
  */
 object AlertTonePreferences {
@@ -10385,8 +10494,8 @@ import android.media.AudioAttributes
 import android.media.MediaPlayer
 
 /**
- * Componente de audio encargado de la reproducciÃ³n de tonos de alerta en el dispositivo mÃ³vil.
- *  * Maneja los ciclos de vida de reproducciÃ³n del sonido, asegurando que las alarmas crÃ­ticas suenen a los niveles de volumen adecuados, incluso en modos restrictivos.
+ * Componente de audio encargado de la reproducción de tonos de alerta en el dispositivo móvil.
+ *  * Maneja los ciclos de vida de reproducción del sonido, asegurando que las alarmas críticas suenen a los niveles de volumen adecuados, incluso en modos restrictivos.
  */
 class AlertTonePlayer(private val context: Context) {
     private var mediaPlayer: MediaPlayer? = null
@@ -10467,8 +10576,8 @@ import kotlinx.serialization.json.jsonPrimitive
 import mx.utng.ich.safecaretv.BuildConfig
 
 /**
- * Capa de abstracciÃ³n para la interacciÃ³n con la API de datos de YouTube.
- *  * Administra la recuperaciÃ³n, el filtrado y el almacenamiento en cachÃ© de listas de reproducciÃ³n curadas y videos de interÃ©s para los usuarios del sistema.
+ * Capa de abstracción para la interacción con la API de datos de YouTube.
+ *  * Administra la recuperación, el filtrado y el almacenamiento en caché de listas de reproducción curadas y videos de interés para los usuarios del sistema.
  */
 class YouTubeRepository(
     context: Context,
@@ -10657,8 +10766,8 @@ private fun Context.signingCertificateSha1(): String = runCatching {
 package mx.utng.ich.safecaretv.data.youtube
 
 /**
- * RepresentaciÃ³n estructural rica de un video de YouTube integrado en la plataforma.
- *  * Incluye identificadores de video, metadatos descriptivos, imÃ¡genes de miniaturas de alta resoluciÃ³n y tiempos de duraciÃ³n.
+ * Representación estructural rica de un video de YouTube integrado en la plataforma.
+ *  * Incluye identificadores de video, metadatos descriptivos, imágenes de miniaturas de alta resolución y tiempos de duración.
  */
 data class YouTubeVideo(
     val id: String,
@@ -10687,7 +10796,7 @@ import mx.utng.ich.safecaretv.ui.theme.SafeCareTheme
 import mx.utng.ich.safecaretv.ui.viewmodel.TvAuthViewModel
 
 /**
- * Punto de entrada principal (Activity) que orquesta la interfaz grÃ¡fica y la navegaciÃ³n en este mÃ³dulo.
+ * Punto de entrada principal (Activity) que orquesta la interfaz gráfica y la navegación en este módulo.
  *  * Aloja los contenedores de Compose y gestiona el ciclo de vida primario de la experiencia de usuario.
  */
 class MainActivity : ComponentActivity() {
@@ -12723,14 +12832,28 @@ package mx.utng.ich.safecaretv.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+/**
+ * Paleta de colores de la interfaz de SafeCare para TV.
+ *
+ * Define los tonos de marca, superficies, texto y error que se reutilizan al construir el
+ * esquema de Material 3 de la aplicacion.
+ */
 val SafeNavy = Color(0xFF101C36)
+/** Variante clara del color azul marino usada como color secundario. */
 val SafeNavyLight = Color(0xFF1B2B4D)
+/** Color principal de la marca SafeCare. */
 val SafePurple = Color(0xFF5A4699)
+/** Variante clara del color principal para fondos y elementos destacados. */
 val SafePurpleLight = Color(0xFFE9E4F8)
+/** Color de fondo general de las pantallas de TV. */
 val SafeBackground = Color(0xFFF8F7FC)
+/** Color de superficie para tarjetas, controles y contenedores. */
 val SafeSurface = Color(0xFFFFFFFF)
+/** Color de texto principal de la interfaz. */
 val SafeText = Color(0xFF171823)
+/** Color de texto secundario para informacion complementaria. */
 val SafeTextMuted = Color(0xFF686A78)
+/** Color empleado para estados y mensajes de error. */
 val SafeError = Color(0xFFC62828)
 ```
 
@@ -12743,6 +12866,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
+/** Esquema claro de Material 3 construido con la paleta visual de SafeCare TV. */
 private val LightColorScheme = lightColorScheme(
     primary = SafePurple,
     secondary = SafeNavyLight,
@@ -12755,6 +12879,14 @@ private val LightColorScheme = lightColorScheme(
     error = SafeError
 )
 
+/**
+ * Aplica el tema visual de SafeCare TV al contenido Compose proporcionado.
+ *
+ * Configura la paleta clara y la tipografia compartida para mantener una apariencia coherente
+ * en todas las pantallas de la aplicacion.
+ *
+ * @param content Contenido Compose al que se aplicara el tema.
+ */
 @Composable
 fun SafeCareTheme(
     content: @Composable () -> Unit
@@ -12833,7 +12965,9 @@ import kotlinx.serialization.Serializable
 import mx.utng.ich.safecaretv.data.profile.MonitoredProfilesRepository
 import mx.utng.ich.safecaretv.data.remote.TvSupabaseClient
 
+/** Representa los posibles estados de carga de los perfiles monitoreados en la TV. */
 sealed interface ProfilesUiState {
+    /** Indica que la lista de perfiles se esta consultando o actualizando. */
     data object Loading : ProfilesUiState
     /**
      * Estado de UI que representa el contenido cargado exitosamente.
@@ -12846,8 +12980,8 @@ sealed interface ProfilesUiState {
 }
 
 /**
- * Componente arquitectÃ³nico (ViewModel) que maneja la lÃ³gica de negocio para la lista interactiva de perfiles.
- *  * Retiene el estado de la vista durante los cambios de configuraciÃ³n y reacciona a los flujos de datos provenientes del repositorio.
+ * Componente arquitectónico (ViewModel) que maneja la lógica de negocio para la lista interactiva de perfiles.
+ *  * Retiene el estado de la vista durante los cambios de configuración y reacciona a los flujos de datos provenientes del repositorio.
  */
 class MonitoredProfilesViewModel(
     private val repository: MonitoredProfilesRepository = MonitoredProfilesRepository()
@@ -12949,6 +13083,14 @@ class MonitoredProfilesViewModel(
     }
 }
 
+/**
+ * Fila de ubicacion recibida desde Supabase Realtime.
+ *
+ * @property latitude Latitud reportada por el smartwatch.
+ * @property longitude Longitud reportada por el smartwatch.
+ * @property timestamp Momento en que se registro la ubicacion.
+ * @property watchId Identificador del smartwatch que envio la coordenada.
+ */
 @Serializable
 private data class TvRealtimeLocationRow(
     @SerialName("latitud") val latitude: Double,
@@ -12975,7 +13117,7 @@ import mx.utng.ich.safecaretv.data.alert.TvAlert
 import mx.utng.ich.safecaretv.data.alert.TvAlertsRepository
 
 /**
- * ViewModel adaptado a las limitaciones y navegaciÃ³n (D-Pad) de la televisiÃ³n.
+ * ViewModel adaptado a las limitaciones y navegación (D-Pad) de la televisión.
  *  * Gestiona el carrusel o lista de alertas visuales en la pantalla, manejando las confirmaciones desde el mando a distancia.
  */
 class TvAlertsViewModel : ViewModel() {
@@ -13043,12 +13185,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import mx.utng.ich.safecaretv.data.remote.TvSupabaseClient
 
+/** Representa los estados posibles del flujo de autenticacion de la aplicacion de TV. */
 sealed interface TvAuthState {
+    /** Indica que se esta verificando si existe una sesion guardada. */
     data object CheckingSession : TvAuthState
+    /** Indica que no hay una sesion autenticada disponible. */
     data object SignedOut : TvAuthState
+    /** Indica que una operacion de inicio de sesion esta en curso. */
     data object Loading : TvAuthState
     /**
-     * Estado de autenticaciÃ³n que indica que el usuario ha iniciado sesiÃ³n correctamente.
+     * Estado de autenticación que indica que el usuario ha iniciado sesión correctamente.
      */
     data class SignedIn(val email: String) : TvAuthState
     /**
@@ -13058,8 +13204,8 @@ sealed interface TvAuthState {
 }
 
 /**
- * Manejador del flujo de autenticaciÃ³n optimizado para TV (ej. autenticaciÃ³n mediante cÃ³digo PIN o cÃ³digo QR).
- *  * Elimina la fricciÃ³n de introducir texto largo, facilitando un inicio de sesiÃ³n fluido en pantallas no tÃ¡ctiles.
+ * Manejador del flujo de autenticación optimizado para TV (ej. autenticación mediante código PIN o código QR).
+ *  * Elimina la fricción de introducir texto largo, facilitando un inicio de sesión fluido en pantallas no táctiles.
  */
 class TvAuthViewModel : ViewModel() {
     private val _state = MutableStateFlow<TvAuthState>(TvAuthState.CheckingSession)
@@ -13143,7 +13289,9 @@ import kotlinx.coroutines.launch
 import mx.utng.ich.safecaretv.data.youtube.YouTubeRepository
 import mx.utng.ich.safecaretv.data.youtube.YouTubeVideo
 
+/** Representa los estados de carga de las recomendaciones de video de YouTube. */
 sealed interface YouTubeUiState {
+    /** Indica que se estan consultando las recomendaciones de video. */
     data object Loading : YouTubeUiState
     /**
      * Estado de UI que representa el contenido cargado exitosamente.
@@ -13156,8 +13304,8 @@ sealed interface YouTubeUiState {
 }
 
 /**
- * Gestor del estado y lÃ³gica de presentaciÃ³n para la galerÃ­a de videos integrados.
- *  * Soporta la paginaciÃ³n, la respuesta a fallos de red y la entrega fluida del contenido multimedia al reproductor visual de la aplicaciÃ³n.
+ * Gestor del estado y lógica de presentación para la galería de videos integrados.
+ *  * Soporta la paginación, la respuesta a fallos de red y la entrega fluida del contenido multimedia al reproductor visual de la aplicación.
  */
 class YouTubeViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = YouTubeRepository(application)
@@ -13199,7 +13347,7 @@ class YouTubeViewModel(application: Application) : AndroidViewModel(application)
 
 ---
 
-### MÃ³dulo Design System - designsystem (tema compartido)
+### Módulo Design System - designsystem (tema compartido)
 
 #### 1. `NativeLib.kt`
 
@@ -13207,8 +13355,8 @@ class YouTubeViewModel(application: Application) : AndroidViewModel(application)
 package mx.utng.ich.safecare.designsystem
 
 /**
- * Interfaz de comunicaciÃ³n JNI (Java Native Interface) para interactuar con bibliotecas compiladas en C/C++.
- *  * Permite la ejecuciÃ³n de algoritmos de procesamiento de seÃ±ales o tareas intensivas con un rendimiento nativo superior.
+ * Interfaz de comunicación JNI (Java Native Interface) para interactuar con bibliotecas compiladas en C/C++.
+ *  * Permite la ejecución de algoritmos de procesamiento de señales o tareas intensivas con un rendimiento nativo superior.
  */
 class NativeLib {
 
@@ -13233,6 +13381,12 @@ class NativeLib {
 package mx.utng.ich.safecare.designsystem.theme
 import androidx.compose.ui.graphics.Color
 
+/**
+ * Paleta generada del sistema de diseno compartido de SafeCare.
+ *
+ * Incluye valores para modos claro y oscuro, asi como variantes de contraste normal, medio y
+ * alto. El tema compartido consume estos valores para construir los esquemas de Material 3.
+ */
 val primaryLight = Color(0xFF4B5C92)
 val onPrimaryLight = Color(0xFFFFFFFF)
 val primaryContainerLight = Color(0xFFDBE1FF)
@@ -13699,7 +13853,7 @@ private val highContrastDarkColorScheme = darkColorScheme(
 
 @Immutable
 /**
- * Estructura de diseÃ±o (Design System) que agrupa colores complementarios utilizados en toda la interfaz de la aplicaciÃ³n.
+ * Estructura de diseño (Design System) que agrupa colores complementarios utilizados en toda la interfaz de la aplicación.
  *  * Garantiza la coherencia visual y el soporte fluido entre los modos claro y oscuro, manteniendo la accesibilidad.
  */
 data class ColorFamily(
@@ -13749,6 +13903,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
+/** Tipografia base de Material 3 compartida por los componentes del sistema de diseno. */
 val AppTypography = Typography()
 ```
 
